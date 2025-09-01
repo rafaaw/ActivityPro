@@ -22,25 +22,34 @@ import Projects from "@/pages/projects";
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
 
+  if (isLoading) {
+    // Mostrar um loading spinner enquanto verifica autenticação
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    // Se não autenticado, sempre mostrar Login
+    return <Login />;
+  }
+
+  // Se autenticado, mostrar as rotas protegidas
   return (
     <Switch>
-      {isLoading || !isAuthenticated ? (
-        <Route path="/" component={Login} />
-      ) : (
-        <>
-          <Route path="/" component={Dashboard} />
-          <Route path="/activities" component={Activities} />
-          <Route path="/feed" component={Feed} />
-          <Route path="/history" component={History} />
-          <Route path="/reports" component={Reports} />
-          <Route path="/projects" component={Projects} />
-          <Route path="/users" component={UserManagement} />
-          <Route path="/sectors" component={Sectors} />
-          <Route path="/team" component={Team} />
-          <Route path="/admin" component={Admin} />
-          <Route path="/settings" component={Settings} />
-        </>
-      )}
+      <Route path="/" component={Dashboard} />
+      <Route path="/activities" component={Activities} />
+      <Route path="/feed" component={Feed} />
+      <Route path="/history" component={History} />
+      <Route path="/reports" component={Reports} />
+      <Route path="/projects" component={Projects} />
+      <Route path="/users" component={UserManagement} />
+      <Route path="/sectors" component={Sectors} />
+      <Route path="/team" component={Team} />
+      <Route path="/admin" component={Admin} />
+      <Route path="/settings" component={Settings} />
       <Route component={NotFound} />
     </Switch>
   );

@@ -58,10 +58,20 @@ export default function Login() {
       } else {
         localStorage.removeItem('activitypro_username');
       }
-      
+
+      // Construir nome de exibição de forma mais robusta
+      let displayName = data.user?.username || 'Usuário';
+
+      if (data.user?.firstName) {
+        displayName = data.user.firstName;
+        if (data.user?.lastName) {
+          displayName += ` ${data.user.lastName}`;
+        }
+      }
+
       toast({
         title: "Login realizado com sucesso",
-        description: `Bem-vindo, ${data.user?.firstName || data.user?.username}!`,
+        description: `Bem-vindo, ${displayName}!`,
       });
       queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
       // Redirect will happen automatically through the auth hook
@@ -99,7 +109,7 @@ export default function Login() {
               </CardDescription>
             </div>
           </CardHeader>
-          
+
           <CardContent className="space-y-6">
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -191,14 +201,6 @@ export default function Login() {
                 </Button>
               </form>
             </Form>
-
-            <div className="text-center text-sm text-muted-foreground border-t pt-4">
-              <p>Credenciais de demonstração:</p>
-              <p className="font-mono text-xs bg-muted p-2 rounded mt-2">
-                Usuário: <strong>demo</strong><br />
-                Senha: <strong>demo123</strong>
-              </p>
-            </div>
           </CardContent>
         </Card>
       </div>
