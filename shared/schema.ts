@@ -31,6 +31,18 @@ export const activityStatusEnum = pgEnum('activity_status', ['next', 'in_progres
 export const priorityEnum = pgEnum('priority', ['low', 'medium', 'high']);
 export const projectStatusEnum = pgEnum('project_status', ['planning', 'in_progress', 'on_hold', 'completed', 'cancelled']);
 
+// Plants table
+export const plants = pgTable("plants", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: varchar("name", { length: 255 }).notNull(),
+  code: varchar("code", { length: 50 }).unique(),
+  location: varchar("location", { length: 255 }),
+  description: text("description"),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Sectors table
 export const sectors = pgTable("sectors", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -114,7 +126,8 @@ export const activities = pgTable("activities", {
   title: varchar("title", { length: 500 }).notNull(),
   type: activityTypeEnum("type").notNull(),
   priority: priorityEnum("priority").notNull(),
-  plant: varchar("plant", { length: 100 }).notNull(),
+  plantId: varchar("plant_id").references(() => plants.id).notNull(),
+  plant: varchar("plant", { length: 100 }), // Manter para compatibilidade temporária
   projectId: varchar("project_id").references(() => projects.id),
   project: varchar("project", { length: 255 }), // Manter para compatibilidade
   requester: varchar("requester", { length: 255 }),
@@ -175,6 +188,10 @@ export const activityLogs = pgTable("activity_logs", {
 });
 
 // Relations
+export const plantsRelations = relations(plants, ({ many }) => ({
+  activities: many(activities),
+}));
+
 export const sectorsRelations = relations(sectors, ({ many }) => ({
   users: many(users),
   projects: many(projects),
@@ -245,6 +262,10 @@ export const activitiesRelations = relations(activities, ({ one, many }) => ({
     fields: [activities.projectId],
     references: [projects.id],
   }),
+  plantRef: one(plants, {
+    fields: [activities.plantId],
+    references: [plants.id],
+  }),
   subtasks: many(subtasks),
   timeAdjustmentLogs: many(timeAdjustmentLogs),
   sessions: many(activitySessions),
@@ -288,6 +309,7 @@ export const activityLogsRelations = relations(activityLogs, ({ one }) => ({
 }));
 
 // Insert schemas
+export const insertPlantSchema = createInsertSchema(plants).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertSectorSchema = createInsertSchema(sectors).omit({ id: true, createdAt: true });
 export const insertProjectSchema = createInsertSchema(projects).omit({
   id: true,
@@ -321,6 +343,7 @@ export const insertActivitySchema = createInsertSchema(activities).omit({
   cancelledAt: true,
 }).extend({
   collaboratorId: z.string().optional(), // Será preenchido no backend
+  plantId: z.string().min(1, "Planta é obrigatória"),
 });
 export const insertSubtaskSchema = createInsertSchema(subtasks).omit({ id: true, createdAt: true });
 export const insertTimeAdjustmentLogSchema = createInsertSchema(timeAdjustmentLogs).omit({ id: true, createdAt: true });
@@ -328,6 +351,8 @@ export const insertActivitySessionSchema = createInsertSchema(activitySessions).
 export const insertActivityLogSchema = createInsertSchema(activityLogs).omit({ id: true, createdAt: true });
 
 // Types
+export type Plant = typeof plants.$inferSelect;
+export type InsertPlant = z.infer<typeof insertPlantSchema>;
 export type Project = typeof projects.$inferSelect;
 export type InsertProject = z.infer<typeof insertProjectSchema>;
 export type ProjectMember = typeof projectMembers.$inferSelect;
@@ -356,7 +381,8 @@ export type InsertActivityLog = z.infer<typeof insertActivityLogSchema>;
 // Extended types with relations
 export type ActivityWithDetails = Activity & {
   collaborator: User;
-  project?: Project;
+  project?: Project | null;
+  plantRef?: Plant;
   subtasks?: Subtask[];
   sessions?: ActivitySession[];
 };

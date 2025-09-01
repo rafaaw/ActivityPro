@@ -143,13 +143,15 @@ export default function ProjectsPage() {
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
-    
+
+    const sectorIdValue = formData.get('sectorId') as string;
+
     const data: InsertProject | Partial<Project> = {
       name: formData.get('name') as string,
       description: formData.get('description') as string,
       priority: formData.get('priority') as any,
       status: formData.get('status') as any,
-      sectorId: formData.get('sectorId') as string || undefined,
+      sectorId: (sectorIdValue && !sectorIdValue.startsWith('__')) ? sectorIdValue : undefined,
       startDate: formData.get('startDate') ? new Date(formData.get('startDate') as string) : undefined,
       endDate: formData.get('endDate') ? new Date(formData.get('endDate') as string) : undefined,
       estimatedHours: formData.get('estimatedHours') ? parseInt(formData.get('estimatedHours') as string) : undefined,
@@ -198,7 +200,7 @@ export default function ProjectsPage() {
                   {editingProject ? 'Atualize as informações do projeto.' : 'Crie um novo projeto para organizar suas atividades.'}
                 </DialogDescription>
               </DialogHeader>
-              
+
               <div className="grid gap-4 py-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
@@ -272,7 +274,7 @@ export default function ProjectsPage() {
                         <SelectValue placeholder="Selecione um setor" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">Sem setor específico</SelectItem>
+                        <SelectItem value="__no_sector__">Sem setor específico</SelectItem>
                         {sectors?.map((sector) => (
                           <SelectItem key={sector.id} value={sector.id}>
                             {sector.name}
@@ -371,11 +373,11 @@ export default function ProjectsPage() {
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3" data-testid="projects-grid">
           {projects?.map((project) => (
             <Card key={project.id} className="relative" data-testid={`card-project-${project.id}`}>
-              <div 
+              <div
                 className="absolute top-0 left-0 w-full h-1 rounded-t-lg"
                 style={{ backgroundColor: project.color }}
               />
-              
+
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between">
                   <div className="space-y-1 flex-1">
@@ -386,7 +388,7 @@ export default function ProjectsPage() {
                       {project.description || 'Sem descrição'}
                     </CardDescription>
                   </div>
-                  
+
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button variant="ghost" size="sm" data-testid={`button-project-menu-${project.id}`}>
@@ -398,7 +400,7 @@ export default function ProjectsPage() {
                         <Edit className="h-4 w-4 mr-2" />
                         Editar
                       </DropdownMenuItem>
-                      <DropdownMenuItem 
+                      <DropdownMenuItem
                         onClick={() => handleDelete(project)}
                         className="text-red-600"
                       >
@@ -425,21 +427,21 @@ export default function ProjectsPage() {
                     <Users className="h-4 w-4" />
                     <span>Responsável: {project.owner.firstName} {project.owner.lastName}</span>
                   </div>
-                  
+
                   {project.sector && (
                     <div className="flex items-center gap-2">
                       <BarChart3 className="h-4 w-4" />
                       <span>Setor: {project.sector.name}</span>
                     </div>
                   )}
-                  
+
                   {project.startDate && (
                     <div className="flex items-center gap-2">
                       <Calendar className="h-4 w-4" />
                       <span>Início: {format(new Date(project.startDate), 'dd/MM/yyyy', { locale: ptBR })}</span>
                     </div>
                   )}
-                  
+
                   {project.estimatedHours && (
                     <div className="text-xs">
                       Estimativa: {project.estimatedHours}h
@@ -461,7 +463,7 @@ export default function ProjectsPage() {
                     <div className="w-full bg-gray-200 rounded-full h-2">
                       <div
                         className="h-2 rounded-full"
-                        style={{ 
+                        style={{
                           width: `${project.completionPercentage}%`,
                           backgroundColor: project.color
                         }}

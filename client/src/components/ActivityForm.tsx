@@ -24,6 +24,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { X, Plus } from "lucide-react";
 import { useState, useEffect } from "react";
+import { usePlants } from "@/hooks/usePlants";
 
 const formSchema = insertActivitySchema.extend({
   subtasks: z.array(z.object({
@@ -37,8 +38,8 @@ const formSchema = insertActivitySchema.extend({
   retroactiveEndTime: z.string().optional(),
 }).refine((data) => {
   if (data.isRetroactive) {
-    return !!(data.retroactiveStartDate && data.retroactiveStartTime && 
-            data.retroactiveEndDate && data.retroactiveEndTime);
+    return !!(data.retroactiveStartDate && data.retroactiveStartTime &&
+      data.retroactiveEndDate && data.retroactiveEndTime);
   }
   return true;
 }, {
@@ -55,12 +56,14 @@ interface ActivityFormProps {
   initialData?: Partial<FormData>;
 }
 
-export default function ActivityForm({ 
-  onSubmit, 
-  onCancel, 
+export default function ActivityForm({
+  onSubmit,
+  onCancel,
   isLoading,
-  initialData 
+  initialData
 }: ActivityFormProps) {
+  const { data: plants = [], isLoading: plantsLoading } = usePlants();
+
   const [subtasks, setSubtasks] = useState<{ title: string; completed?: boolean }[]>(
     initialData?.subtasks?.map(s => ({ title: s.title, completed: s.completed })) || []
   );
@@ -72,6 +75,7 @@ export default function ActivityForm({
       title: initialData?.title || "",
       type: initialData?.type || "simple",
       priority: initialData?.priority || "medium",
+      plantId: initialData?.plantId || "",
       plant: initialData?.plant || "",
       project: initialData?.project || "",
       requester: initialData?.requester || "",
@@ -90,9 +94,9 @@ export default function ActivityForm({
   // Sincronizar subtasks quando initialData mudar (importante para edição)
   useEffect(() => {
     if (initialData?.subtasks) {
-      const mappedSubtasks = initialData.subtasks.map(s => ({ 
+      const mappedSubtasks = initialData.subtasks.map(s => ({
         title: s.title,
-        completed: s.completed || false 
+        completed: s.completed || false
       }));
       setSubtasks(mappedSubtasks);
       form.setValue("subtasks", mappedSubtasks);
@@ -118,10 +122,14 @@ export default function ActivityForm({
   };
 
   const handleSubmit = (data: FormData) => {
-    onSubmit({
+    // Filtrar valores especiais de loading/empty que não devem ser enviados
+    const cleanData = {
       ...data,
+      plantId: data.plantId?.startsWith('__') ? '' : data.plantId,
       subtasks: watchedType === "checklist" ? subtasks : undefined,
-    });
+    };
+
+    onSubmit(cleanData);
   };
 
   return (
@@ -135,9 +143,9 @@ export default function ActivityForm({
               <FormItem className="md:col-span-2">
                 <FormLabel>Título da Atividade *</FormLabel>
                 <FormControl>
-                  <Input 
-                    placeholder="Digite o título da atividade" 
-                    {...field} 
+                  <Input
+                    placeholder="Digite o título da atividade"
+                    {...field}
                     data-testid="input-activity-title"
                   />
                 </FormControl>
@@ -193,20 +201,28 @@ export default function ActivityForm({
 
           <FormField
             control={form.control}
-            name="plant"
+            name="plantId"
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Planta *</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <Select onValueChange={field.onChange} defaultValue={field.value || ""}>
                   <FormControl>
                     <SelectTrigger data-testid="select-activity-plant">
                       <SelectValue placeholder="Selecione a planta" />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value="Planta A">Planta A</SelectItem>
-                    <SelectItem value="Planta B">Planta B</SelectItem>
-                    <SelectItem value="Planta C">Planta C</SelectItem>
+                    {plantsLoading ? (
+                      <SelectItem value="__loading__" disabled>Carregando plantas...</SelectItem>
+                    ) : plants.length === 0 ? (
+                      <SelectItem value="__empty__" disabled>Nenhuma planta disponível</SelectItem>
+                    ) : (
+                      plants.map((plant) => (
+                        <SelectItem key={plant.id} value={plant.id}>
+                          {plant.name}
+                        </SelectItem>
+                      ))
+                    )}
                   </SelectContent>
                 </Select>
                 <FormMessage />
@@ -221,9 +237,9 @@ export default function ActivityForm({
               <FormItem>
                 <FormLabel>Projeto</FormLabel>
                 <FormControl>
-                  <Input 
-                    placeholder="Nome do projeto (opcional)" 
-                    {...field} 
+                  <Input
+                    placeholder="Nome do projeto (opcional)"
+                    {...field}
                     value={field.value || ""}
                     data-testid="input-activity-project"
                   />
@@ -240,9 +256,9 @@ export default function ActivityForm({
               <FormItem>
                 <FormLabel>Solicitante</FormLabel>
                 <FormControl>
-                  <Input 
-                    placeholder="Nome do solicitante (opcional)" 
-                    {...field} 
+                  <Input
+                    placeholder="Nome do solicitante (opcional)"
+                    {...field}
                     value={field.value || ""}
                     data-testid="input-activity-requester"
                   />
@@ -288,7 +304,7 @@ export default function ActivityForm({
                   <div className="space-y-0 max-h-[7.5rem] overflow-y-auto">
                     {subtasks.map((subtask, index) => (
                       <div key={index}>
-                        <div 
+                        <div
                           className="flex items-center justify-between px-2 py-1 bg-muted/50 rounded text-xs"
                           data-testid={`subtask-item-${index}`}
                         >
@@ -426,25 +442,25 @@ export default function ActivityForm({
         </div>
 
         <div className="flex items-center justify-end space-x-3 pt-4">
-          <Button 
-            type="button" 
-            variant="outline" 
+          <Button
+            type="button"
+            variant="outline"
             onClick={onCancel}
             disabled={isLoading}
             data-testid="button-cancel-form"
           >
             Cancelar
           </Button>
-          <Button 
-            type="submit" 
+          <Button
+            type="submit"
             disabled={isLoading}
             className="gradient-bg"
             data-testid="button-submit-form"
           >
-            {isLoading 
-              ? "Criando..." 
-              : form.watch("isRetroactive") 
-                ? "Criar Atividade Retroativa" 
+            {isLoading
+              ? "Criando..."
+              : form.watch("isRetroactive")
+                ? "Criar Atividade Retroativa"
                 : "Criar Atividade"
             }
           </Button>

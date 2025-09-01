@@ -1,6 +1,7 @@
 import {
   users,
   sectors,
+  plants,
   activities,
   subtasks,
   timeAdjustmentLogs,
@@ -14,6 +15,8 @@ import {
   type UpsertUser,
   type Sector,
   type InsertSector,
+  type Plant,
+  type InsertPlant,
   type Activity,
   type InsertActivity,
   type ActivityWithDetails,
@@ -50,14 +53,22 @@ export interface IStorage {
   getAllUsers(): Promise<User[]>;
   getUsersBySector(sectorId: string): Promise<User[]>;
   updateUser(id: string, updates: Partial<User>): Promise<User>;
-  
+
   // Sector operations
   createSector(sector: InsertSector): Promise<Sector>;
   getSectors(): Promise<Sector[]>;
   getSector(id: string): Promise<Sector | undefined>;
   updateSector(id: string, updates: Partial<Sector>): Promise<Sector>;
   deleteSector(id: string): Promise<void>;
-  
+
+  // Plant operations
+  createPlant(plant: InsertPlant): Promise<Plant>;
+  getPlants(): Promise<Plant[]>;
+  getPlant(id: string): Promise<Plant | undefined>;
+  updatePlant(id: string, updates: Partial<Plant>): Promise<Plant>;
+  deletePlant(id: string): Promise<void>;
+  getActivitiesByPlant(plantId: string): Promise<ActivityWithDetails[]>;
+
   // Activity operations
   createActivity(activity: InsertActivity): Promise<Activity>;
   getActivity(id: string): Promise<ActivityWithDetails | undefined>;
@@ -66,12 +77,12 @@ export interface IStorage {
   getActivitiesBySector(sectorId: string): Promise<ActivityWithDetails[]>;
   updateActivity(id: string, updates: Partial<Activity>): Promise<Activity>;
   deleteActivity(id: string): Promise<void>;
-  
+
   // Activity session operations
   startActivitySession(activityId: string): Promise<ActivitySession>;
   endActivitySession(sessionId: string, endTime: Date): Promise<ActivitySession>;
   getActiveSession(activityId: string): Promise<ActivitySession | undefined>;
-  
+
   // Subtask operations
   createSubtask(subtask: InsertSubtask): Promise<Subtask>;
   getSubtask(id: string): Promise<Subtask | undefined>;
@@ -79,16 +90,16 @@ export interface IStorage {
   updateSubtask(id: string, data: { completed?: boolean }): Promise<Subtask>;
   deleteSubtask(id: string): Promise<void>;
   deleteSubtasksByActivity(activityId: string): Promise<void>;
-  
+
   // Time adjustment operations
   createTimeAdjustmentLog(log: InsertTimeAdjustmentLog): Promise<TimeAdjustmentLog>;
   getTimeAdjustmentLogs(activityId: string): Promise<TimeAdjustmentLog[]>;
-  
+
   // Activity log operations
   createActivityLog(log: InsertActivityLog): Promise<ActivityLog>;
   getActivityLogs(limit?: number): Promise<ActivityLogWithUser[]>;
   getActivityLogsBySector(sectorId: string, limit?: number): Promise<ActivityLogWithUser[]>;
-  
+
   // Project operations
   createProject(project: InsertProject): Promise<Project>;
   getProjects(): Promise<ProjectWithDetails[]>;
@@ -97,13 +108,13 @@ export interface IStorage {
   getProjectsByUser(userId: string): Promise<ProjectWithDetails[]>;
   updateProject(id: string, updates: Partial<Project>): Promise<Project>;
   deleteProject(id: string): Promise<void>;
-  
+
   // Project member operations
   addProjectMember(member: InsertProjectMember): Promise<ProjectMember>;
   removeProjectMember(projectId: string, userId: string): Promise<void>;
   isProjectMember(projectId: string, userId: string): Promise<boolean>;
   getProjectMembers(projectId: string): Promise<(ProjectMember & { user: User })[]>;
-  
+
   // Dashboard queries
   getUserWithSector(id: string): Promise<UserWithSector | undefined>;
   getActiveActivitiesBySector(sectorId: string): Promise<ActivityWithDetails[]>;
@@ -195,6 +206,49 @@ export class DatabaseStorage implements IStorage {
     await db.delete(sectors).where(eq(sectors.id, id));
   }
 
+  // Plant operations
+  async createPlant(plant: InsertPlant): Promise<Plant> {
+    const [newPlant] = await db.insert(plants).values(plant).returning();
+    return newPlant;
+  }
+
+  async getPlants(): Promise<Plant[]> {
+    return await db.select().from(plants).where(eq(plants.isActive, true)).orderBy(plants.name);
+  }
+
+  async getPlant(id: string): Promise<Plant | undefined> {
+    const [plant] = await db.select().from(plants).where(eq(plants.id, id));
+    return plant;
+  }
+
+  async updatePlant(id: string, updates: Partial<Plant>): Promise<Plant> {
+    const [plant] = await db
+      .update(plants)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(plants.id, id))
+      .returning();
+    return plant;
+  }
+
+  async deletePlant(id: string): Promise<void> {
+    await db.delete(plants).where(eq(plants.id, id));
+  }
+
+  async getActivitiesByPlant(plantId: string): Promise<ActivityWithDetails[]> {
+    const results = await db
+      .select()
+      .from(activities)
+      .leftJoin(users, eq(activities.collaboratorId, users.id))
+      .leftJoin(plants, eq(activities.plantId, plants.id))
+      .where(eq(activities.plantId, plantId));
+
+    return results.map(result => ({
+      ...result.activities,
+      collaborator: result.users!,
+      plantRef: result.plants || undefined,
+    })) as ActivityWithDetails[];
+  }
+
   // Activity operations
   async createActivity(activity: InsertActivity): Promise<Activity> {
     const [newActivity] = await db.insert(activities).values(activity).returning();
@@ -207,7 +261,7 @@ export class DatabaseStorage implements IStorage {
       .from(activities)
       .leftJoin(users, eq(activities.collaboratorId, users.id))
       .where(eq(activities.id, id));
-    
+
     if (!activity.activities) return undefined;
 
     const subtasks = await this.getSubtasksByActivity(id);
@@ -396,9 +450,9 @@ export class DatabaseStorage implements IStorage {
       .from(users)
       .leftJoin(sectors, eq(users.sectorId, sectors.id))
       .where(eq(users.id, id));
-    
+
     if (!result.users) return undefined;
-    
+
     return {
       ...result.users,
       sector: result.sectors || undefined,
@@ -422,8 +476,8 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getCompletedActivitiesForPeriod(
-    collaboratorId: string, 
-    startDate: Date, 
+    collaboratorId: string,
+    startDate: Date,
     endDate: Date
   ): Promise<ActivityWithDetails[]> {
     const results = await db
@@ -441,7 +495,7 @@ export class DatabaseStorage implements IStorage {
     return results.map(result => ({
       ...result.activities,
       collaborator: result.users!,
-    }));
+    })) as ActivityWithDetails[];
   }
 
   // Activity log operations
@@ -453,7 +507,7 @@ export class DatabaseStorage implements IStorage {
   async getActivityLogs(limit: number = 50, offset: number = 0, days: number = 7): Promise<ActivityLogWithUser[]> {
     const dateFilter = new Date();
     dateFilter.setDate(dateFilter.getDate() - days);
-    
+
     const results = await db
       .select()
       .from(activityLogs)
@@ -472,7 +526,7 @@ export class DatabaseStorage implements IStorage {
   async getActivityLogsBySector(sectorId: string, limit: number = 50, offset: number = 0, days: number = 7): Promise<ActivityLogWithUser[]> {
     const dateFilter = new Date();
     dateFilter.setDate(dateFilter.getDate() - days);
-    
+
     const results = await db
       .select()
       .from(activityLogs)
@@ -571,7 +625,7 @@ export class DatabaseStorage implements IStorage {
 
     // Combine and deduplicate
     const projectMap = new Map();
-    
+
     ownedResults.forEach(result => {
       projectMap.set(result.projects.id, {
         ...result.projects,
@@ -646,6 +700,43 @@ export class DatabaseStorage implements IStorage {
       ...result.project_members,
       user: result.users!,
     }));
+  }
+
+  async getDbStructure(): Promise<any> {
+    try {
+      // Verificar estrutura da tabela activities
+      const activitiesStructure = await db.execute(sql`
+        SELECT column_name, data_type, is_nullable, column_default 
+        FROM information_schema.columns 
+        WHERE table_name = 'activities' 
+        ORDER BY ordinal_position;
+      `);
+
+      // Verificar estrutura da tabela plants
+      const plantsStructure = await db.execute(sql`
+        SELECT column_name, data_type, is_nullable, column_default 
+        FROM information_schema.columns 
+        WHERE table_name = 'plants' 
+        ORDER BY ordinal_position;
+      `);
+
+      // Listar todas as tabelas
+      const tables = await db.execute(sql`
+        SELECT table_name 
+        FROM information_schema.tables 
+        WHERE table_schema = 'public' 
+        ORDER BY table_name;
+      `);
+
+      return {
+        activities: activitiesStructure.rows,
+        plants: plantsStructure.rows,
+        tables: tables.rows
+      };
+    } catch (error) {
+      console.error('Error getting DB structure:', error);
+      throw error;
+    }
   }
 }
 

@@ -3,7 +3,7 @@ import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated, login, logout, getCurrentUser } from "./auth";
-import { insertActivitySchema, insertSubtaskSchema, insertTimeAdjustmentLogSchema, insertSectorSchema, insertProjectSchema, insertProjectMemberSchema } from "@shared/schema";
+import { insertActivitySchema, insertSubtaskSchema, insertTimeAdjustmentLogSchema, insertSectorSchema, insertProjectSchema, insertProjectMemberSchema, insertPlantSchema } from "@shared/schema";
 import { z } from "zod";
 import bcrypt from "bcryptjs";
 import { Document, Packer, Paragraph, HeadingLevel, TextRun, AlignmentType, Table, TableRow, TableCell, WidthType } from "docx";
@@ -21,6 +21,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/auth/login', login);
   app.post('/api/auth/logout', logout);
   app.get('/api/auth/user', isAuthenticated, getCurrentUser);
+
+  // Temporary route to check database structure
+  app.get('/api/debug/db-structure', async (req, res) => {
+    try {
+      const structure = await storage.getDbStructure();
+      res.json(structure);
+    } catch (error) {
+      console.error("Error getting DB structure:", error);
+      res.status(500).json({
+        message: "Failed to get DB structure",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
 
   // Sector routes
   app.get('/api/sectors', isAuthenticated, async (req, res) => {
@@ -73,12 +87,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const { id } = req.params;
-      
+
       // Check if sector has users before deleting
       const usersInSector = await storage.getUsersBySector(id);
       if (usersInSector.length > 0) {
-        return res.status(400).json({ 
-          message: "Cannot delete sector with assigned users. Please reassign users first." 
+        return res.status(400).json({
+          message: "Cannot delete sector with assigned users. Please reassign users first."
         });
       }
 
@@ -87,6 +101,75 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error deleting sector:", error);
       res.status(500).json({ message: "Failed to delete sector" });
+    }
+  });
+
+  // Plants routes
+  app.get('/api/plants', isAuthenticated, async (req, res) => {
+    try {
+      const plants = await storage.getPlants();
+      res.json(plants);
+    } catch (error) {
+      console.error("Error fetching plants:", error);
+      res.status(500).json({ message: "Failed to fetch plants" });
+    }
+  });
+
+  app.post('/api/plants', isAuthenticated, async (req, res) => {
+    try {
+      const user = await storage.getUser(req.user!.id);
+      if (user?.role !== 'admin') {
+        return res.status(403).json({ message: "Only admins can create plants" });
+      }
+
+      const plantData = insertPlantSchema.parse(req.body);
+      const plant = await storage.createPlant(plantData);
+      res.status(201).json(plant);
+    } catch (error) {
+      console.error("Error creating plant:", error);
+      res.status(500).json({ message: "Failed to create plant" });
+    }
+  });
+
+  app.put('/api/plants/:id', isAuthenticated, async (req, res) => {
+    try {
+      const user = await storage.getUser(req.user!.id);
+      if (user?.role !== 'admin') {
+        return res.status(403).json({ message: "Only admins can update plants" });
+      }
+
+      const { id } = req.params;
+      const updates = insertPlantSchema.partial().parse(req.body);
+      const plant = await storage.updatePlant(id, updates);
+      res.json(plant);
+    } catch (error) {
+      console.error("Error updating plant:", error);
+      res.status(500).json({ message: "Failed to update plant" });
+    }
+  });
+
+  app.delete('/api/plants/:id', isAuthenticated, async (req, res) => {
+    try {
+      const user = await storage.getUser(req.user!.id);
+      if (user?.role !== 'admin') {
+        return res.status(403).json({ message: "Only admins can delete plants" });
+      }
+
+      const { id } = req.params;
+
+      // Check if plant has activities before deleting
+      const activitiesInPlant = await storage.getActivitiesByPlant(id);
+      if (activitiesInPlant.length > 0) {
+        return res.status(400).json({
+          message: "Cannot delete plant with associated activities. Please reassign activities first."
+        });
+      }
+
+      await storage.deletePlant(id);
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting plant:", error);
+      res.status(500).json({ message: "Failed to delete plant" });
     }
   });
 
@@ -104,7 +187,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } else if (currentUser.role === 'sector_chief' && currentUser.sectorId) {
         users = await storage.getUsersBySector(currentUser.sectorId);
       }
-      
+
       res.json(users);
     } catch (error) {
       console.error("Error fetching users:", error);
@@ -158,7 +241,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       };
 
       const newUser = await storage.createUser(userData);
-      
+
       // Remove password from response
       const { password: _, ...userResponse } = newUser;
       res.status(201).json(userResponse);
@@ -177,7 +260,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const userId = req.params.id;
       const targetUser = await storage.getUser(userId);
-      
+
       if (!targetUser) {
         return res.status(404).json({ message: "User not found" });
       }
@@ -190,7 +273,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const updates = req.body;
-      
+
       // Hash password if provided, otherwise remove from updates
       if (updates.password && updates.password.trim() !== '') {
         updates.password = await bcrypt.hash(updates.password, 10);
@@ -200,7 +283,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const updatedUser = await storage.updateUser(userId, updates);
-      
+
       // Remove password from response
       const { password: _, ...userResponse } = updatedUser;
       res.json(userResponse);
@@ -215,7 +298,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = req.user!.id;
       const user = await storage.getUser(userId);
-      
+
       if (!user) {
         return res.status(404).json({ message: "User not found" });
       }
@@ -228,7 +311,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } else {
         activities = await storage.getActivitiesByCollaborator(userId);
       }
-      
+
       res.json(activities);
     } catch (error) {
       console.error("Error fetching activities:", error);
@@ -245,16 +328,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const userId = req.user!.id;
       const user = await storage.getUser(userId);
-      
+
       // Check permissions
       if (user?.role === 'collaborator' && activity.collaboratorId !== userId) {
         return res.status(403).json({ message: "Access denied" });
       }
-      
+
       if (user?.role === 'sector_chief' && activity.collaborator.sectorId !== user.sectorId) {
         return res.status(403).json({ message: "Access denied" });
       }
-      
+
       res.json(activity);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch activity" });
@@ -264,16 +347,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/activities', isAuthenticated, async (req, res) => {
     try {
       const userId = req.user!.id;
-      
-      const { 
+
+      const {
         isRetroactive,
         retroactiveStartDate,
         retroactiveStartTime,
         retroactiveEndDate,
         retroactiveEndTime,
-        ...activityData 
+        ...activityData
       } = req.body;
-      
+
       const fullActivityData = {
         ...activityData,
         collaboratorId: userId,
@@ -284,43 +367,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Parse dates with local timezone
         const startDateTime = new Date(`${retroactiveStartDate}T${retroactiveStartTime}:00`);
         const endDateTime = new Date(`${retroactiveEndDate}T${retroactiveEndTime}:00`);
-        
+
         // Validate dates
         if (isNaN(startDateTime.getTime()) || isNaN(endDateTime.getTime())) {
           return res.status(400).json({ message: "Invalid date or time format" });
         }
-        
+
         if (startDateTime >= endDateTime) {
           return res.status(400).json({ message: "End time must be after start time" });
         }
-        
+
         if (endDateTime > new Date()) {
           return res.status(400).json({ message: "End time cannot be in the future" });
         }
-        
+
         // Calculate total time in milliseconds
         const totalTime = endDateTime.getTime() - startDateTime.getTime();
-        
+
         fullActivityData.status = 'completed';
         fullActivityData.totalTime = totalTime;
         fullActivityData.startedAt = startDateTime;
         fullActivityData.completedAt = endDateTime;
       }
-      
+
       const validatedActivityData = insertActivitySchema.parse(fullActivityData);
 
       // Check if user has an active activity (only for non-retroactive activities)
       if (!isRetroactive && validatedActivityData.status === 'in_progress') {
         const userActivities = await storage.getActivitiesByCollaborator(userId);
         const hasActiveActivity = userActivities.some(a => a.status === 'in_progress');
-        
+
         if (hasActiveActivity) {
           return res.status(400).json({ message: "You already have an active activity" });
         }
       }
 
       const activity = await storage.createActivity(validatedActivityData);
-      
+
       // Create subtasks if provided
       if (req.body.subtasks && Array.isArray(req.body.subtasks)) {
         for (const subtaskData of req.body.subtasks) {
@@ -338,18 +421,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const fullActivity = await storage.getActivity(activity.id);
-      
+
       // Create activity log for creation
       let logAction = 'created';
       let timeSpent = undefined;
-      
+
       if (activity.status === 'in_progress') {
         logAction = 'started';
       } else if (activity.status === 'completed' && isRetroactive) {
         logAction = 'completed';
         timeSpent = activity.totalTime;
       }
-      
+
       await storage.createActivityLog({
         activityId: activity.id,
         userId,
@@ -357,13 +440,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         activityTitle: activity.title,
         timeSpent,
       });
-      
+
       // Broadcast to WebSocket clients
       broadcastToSector(fullActivity!.collaborator.sectorId!, {
         type: 'activity_created',
         activity: fullActivity,
       });
-      
+
       res.status(201).json(fullActivity);
     } catch (error) {
       console.error("Error creating activity:", error);
@@ -378,7 +461,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const activityId = req.params.id;
       const userId = req.user!.id;
-      
+
       const activity = await storage.getActivity(activityId);
       if (!activity) {
         return res.status(404).json({ message: "Activity not found" });
@@ -395,16 +478,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const updates = req.body;
-      
+
       // Handle status changes
       if (updates.status) {
         if (updates.status === 'in_progress') {
           // Check if user has another active activity
           const userActivities = await storage.getActivitiesByCollaborator(userId);
-          const hasOtherActiveActivity = userActivities.some(a => 
+          const hasOtherActiveActivity = userActivities.some(a =>
             a.id !== activityId && a.status === 'in_progress'
           );
-          
+
           if (hasOtherActiveActivity) {
             return res.status(400).json({ message: "You already have an active activity" });
           }
@@ -412,7 +495,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           updates.startedAt = new Date();
           await storage.startActivitySession(activityId);
         }
-        
+
         if (updates.status === 'paused') {
           const activeSession = await storage.getActiveSession(activityId);
           if (activeSession) {
@@ -423,7 +506,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
           updates.pausedAt = new Date();
         }
-        
+
         if (updates.status === 'completed') {
           const activeSession = await storage.getActiveSession(activityId);
           if (activeSession) {
@@ -433,7 +516,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
           updates.completedAt = new Date();
         }
-        
+
         if (updates.status === 'cancelled') {
           const activeSession = await storage.getActiveSession(activityId);
           if (activeSession) {
@@ -453,7 +536,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (updates.subtasks && activity.type === 'checklist') {
         // Remove existing subtasks and create new ones
         await storage.deleteSubtasksByActivity(activityId);
-        
+
         // Create new subtasks preserving their completion status
         for (const subtask of updates.subtasks) {
           await storage.createSubtask({
@@ -462,19 +545,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
             completed: subtask.completed || false,
           });
         }
-        
+
         // Remove subtasks from updates to prevent DB error
         delete updates.subtasks;
       }
 
       const updatedActivity = await storage.updateActivity(activityId, updates);
       const fullActivity = await storage.getActivity(activityId);
-      
+
       // Create activity log for status changes
       if (updates.status && updates.status !== activity.status) {
         let action = '';
         let timeSpent = undefined;
-        
+
         switch (updates.status) {
           case 'in_progress':
             action = 'started';
@@ -490,7 +573,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             action = 'cancelled';
             break;
         }
-        
+
         if (action) {
           await storage.createActivityLog({
             activityId,
@@ -501,13 +584,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
         }
       }
-      
+
       // Broadcast to WebSocket clients
       broadcastToSector(fullActivity!.collaborator.sectorId!, {
         type: 'activity_updated',
         activity: fullActivity,
       });
-      
+
       res.json(fullActivity);
     } catch (error) {
       console.error("Error updating activity:", error);
@@ -548,15 +631,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Update activity time
       await storage.updateActivity(activityId, { totalTime: newTotalTime });
-      
+
       const updatedActivity = await storage.getActivity(activityId);
-      
+
       // Broadcast to WebSocket clients
       broadcastToSector(updatedActivity!.collaborator.sectorId!, {
         type: 'activity_updated',
         activity: updatedActivity,
       });
-      
+
       res.json(updatedActivity);
     } catch (error) {
       console.error("Error adjusting time:", error);
@@ -569,7 +652,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = req.user!.id;
       const user = await storage.getUser(userId);
-      
+
       if (!user) {
         return res.status(404).json({ message: "User not found" });
       }
@@ -593,7 +676,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           logs = [];
         }
       }
-      
+
       // Add cache headers for better performance
       res.set('Cache-Control', 'public, max-age=30'); // Cache for 30 seconds
       res.json({
@@ -615,7 +698,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const activityId = req.params.id;
       const userId = req.user.id;
-      
+
       const activity = await storage.getActivity(activityId);
       if (!activity || activity.collaboratorId !== userId) {
         return res.status(404).json({ message: "Activity not found" });
@@ -666,10 +749,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Update subtask
       const updatedSubtask = await storage.updateSubtask(subtaskId, { completed });
-      
+
       // Get updated activity with all subtasks
       const fullActivity = await storage.getActivity(activity.id);
-      
+
       // Broadcast to WebSocket clients if sector exists
       if (fullActivity?.collaborator?.sectorId) {
         broadcastToSector(fullActivity.collaborator.sectorId, {
@@ -678,11 +761,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           subtask: updatedSubtask,
         });
       }
-      
+
       res.json(updatedSubtask);
     } catch (error) {
       console.error("Error updating subtask:", error);
-      res.status(500).json({ message: "Failed to update subtask", error: error.message });
+      res.status(500).json({ message: "Failed to update subtask", error: error instanceof Error ? error.message : 'Unknown error' });
     }
   });
 
@@ -690,23 +773,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/dashboard/stats', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.id;
-      
+
       // Get today's completed activities
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       const tomorrow = new Date(today);
       tomorrow.setDate(tomorrow.getDate() + 1);
-      
+
       const todayActivities = await storage.getCompletedActivitiesForPeriod(userId, today, tomorrow);
       const todayTime = todayActivities.reduce((total, activity) => total + (activity.totalTime || 0), 0);
-      
+
       // Get this week's completed activities
       const weekStart = new Date(today);
       weekStart.setDate(today.getDate() - today.getDay());
-      
+
       const weekActivities = await storage.getCompletedActivitiesForPeriod(userId, weekStart, tomorrow);
       const weekTime = weekActivities.reduce((total, activity) => total + (activity.totalTime || 0), 0);
-      
+
       res.json({
         todayHours: Math.floor(todayTime / 3600),
         todayMinutes: Math.floor((todayTime % 3600) / 60),
@@ -726,7 +809,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = req.user.id;
       const user = await storage.getUser(userId);
-      
+
       if (user?.role !== 'sector_chief' || !user.sectorId) {
         return res.status(403).json({ message: "Access denied" });
       }
@@ -780,7 +863,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Get all activities from the sector
       const activities = await storage.getActivitiesBySector(currentUser.sectorId);
-      
+
       // Calculate stats
       const totalActivities = activities.length;
       const completedActivities = activities.filter((a: any) => a.status === 'completed').length;
@@ -804,7 +887,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = req.user!.id;
       const user = await storage.getUser(userId);
-      
+
       if (!user) {
         return res.status(404).json({ message: "User not found" });
       }
@@ -819,9 +902,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Extract unique filter options from actual data
-      const plants = [...new Set(activities.map((a: any) => a.plant).filter(Boolean))];
-      const projects = [...new Set(activities.map((a: any) => a.project).filter(Boolean))];
-      const requesters = [...new Set(activities.map((a: any) => a.requester).filter(Boolean))];
+      const plants = Array.from(new Set(activities.map((a: any) => a.plant).filter(Boolean)));
+      const projects = Array.from(new Set(activities.map((a: any) => a.project).filter(Boolean)));
+      const requesters = Array.from(new Set(activities.map((a: any) => a.requester).filter(Boolean)));
 
       // Get collaborators based on user role
       let collaborators: any[] = [];
@@ -847,21 +930,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = req.user!.id;
       const user = await storage.getUser(userId);
-      
+
       if (!user) {
         return res.status(404).json({ message: "User not found" });
       }
 
-      const { 
-        plant, 
-        project, 
-        requester, 
+      const {
+        plant,
+        project,
+        requester,
         collaboratorId,
-        startDate, 
-        endDate, 
-        status, 
+        startDate,
+        endDate,
+        status,
         type,
-        sectorId 
+        sectorId
       } = req.query;
 
       let activities;
@@ -887,15 +970,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Filter by date range
         if (startDate || endDate) {
           const createdAt = new Date(activity.createdAt);
-          
+
           // Get date in YYYY-MM-DD format for comparison
           const createdDateStr = createdAt.toISOString().split('T')[0];
-          
+
           if (startDate) {
             const startDateStr = new Date(startDate as string).toISOString().split('T')[0];
             if (createdDateStr < startDateStr) matches = false;
           }
-          
+
           if (endDate) {
             const endDateStr = new Date(endDate as string).toISOString().split('T')[0];
             if (createdDateStr > endDateStr) matches = false;
@@ -917,7 +1000,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = req.user!.id;
       const user = await storage.getUser(userId);
-      
+
       if (!user) {
         return res.status(404).json({ message: "User not found" });
       }
@@ -957,7 +1040,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Generate CSV content
       if (format === 'csv') {
         const csvHeaders = [
-          'Título', 'Descrição', 'Tipo', 'Status', 'Prioridade', 
+          'Título', 'Descrição', 'Tipo', 'Status', 'Prioridade',
           'Planta', 'Projeto', 'Solicitante', 'Colaborador',
           'Tempo Total (horas)', 'Data Criação', 'Data Conclusão'
         ];
@@ -966,12 +1049,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           activity.title || '',
           activity.description || '',
           activity.type === 'simple' ? 'Simples' : 'Checklist',
-          activity.status === 'completed' ? 'Concluída' : 
-          activity.status === 'in_progress' ? 'Em Andamento' :
-          activity.status === 'paused' ? 'Pausada' :
-          activity.status === 'cancelled' ? 'Cancelada' : 'Pendente',
+          activity.status === 'completed' ? 'Concluída' :
+            activity.status === 'in_progress' ? 'Em Andamento' :
+              activity.status === 'paused' ? 'Pausada' :
+                activity.status === 'cancelled' ? 'Cancelada' : 'Pendente',
           activity.priority === 'high' ? 'Alta' :
-          activity.priority === 'medium' ? 'Média' : 'Baixa',
+            activity.priority === 'medium' ? 'Média' : 'Baixa',
           activity.plant || '',
           activity.project || '',
           activity.requester || '',
@@ -991,7 +1074,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } else if (format === 'excel') {
         // For now, return CSV format for Excel too
         const csvHeaders = [
-          'Título', 'Descrição', 'Tipo', 'Status', 'Prioridade', 
+          'Título', 'Descrição', 'Tipo', 'Status', 'Prioridade',
           'Planta', 'Projeto', 'Solicitante', 'Colaborador',
           'Tempo Total (horas)', 'Data Criação', 'Data Conclusão'
         ];
@@ -1000,12 +1083,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           activity.title || '',
           activity.description || '',
           activity.type === 'simple' ? 'Simples' : 'Checklist',
-          activity.status === 'completed' ? 'Concluída' : 
-          activity.status === 'in_progress' ? 'Em Andamento' :
-          activity.status === 'paused' ? 'Pausada' :
-          activity.status === 'cancelled' ? 'Cancelada' : 'Pendente',
+          activity.status === 'completed' ? 'Concluída' :
+            activity.status === 'in_progress' ? 'Em Andamento' :
+              activity.status === 'paused' ? 'Pausada' :
+                activity.status === 'cancelled' ? 'Cancelada' : 'Pendente',
           activity.priority === 'high' ? 'Alta' :
-          activity.priority === 'medium' ? 'Média' : 'Baixa',
+            activity.priority === 'medium' ? 'Média' : 'Baixa',
           activity.plant || '',
           activity.project || '',
           activity.requester || '',
@@ -1033,7 +1116,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 heading: HeadingLevel.TITLE,
                 alignment: AlignmentType.CENTER,
               }),
-              
+
               // Subtitle with date range
               new Paragraph({
                 children: [
@@ -1053,7 +1136,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 heading: HeadingLevel.HEADING_1,
                 spacing: { before: 400, after: 200 }
               }),
-              
+
               new Paragraph({
                 children: [
                   new TextRun({ text: `Total de Atividades: ${filteredActivities.length}`, break: 1 }),
@@ -1092,12 +1175,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
                       children: [
                         new TableCell({ children: [new Paragraph({ text: activity.title || '' })] }),
                         new TableCell({ children: [new Paragraph({ text: activity.type === 'simple' ? 'Simples' : 'Checklist' })] }),
-                        new TableCell({ children: [new Paragraph({ 
-                          text: activity.status === 'completed' ? 'Concluída' : 
-                               activity.status === 'in_progress' ? 'Em Andamento' :
-                               activity.status === 'paused' ? 'Pausada' :
-                               activity.status === 'cancelled' ? 'Cancelada' : 'Pendente'
-                        })] }),
+                        new TableCell({
+                          children: [new Paragraph({
+                            text: activity.status === 'completed' ? 'Concluída' :
+                              activity.status === 'in_progress' ? 'Em Andamento' :
+                                activity.status === 'paused' ? 'Pausada' :
+                                  activity.status === 'cancelled' ? 'Cancelada' : 'Pendente'
+                          })]
+                        }),
                         new TableCell({ children: [new Paragraph({ text: activity.collaborator?.username || '' })] }),
                         new TableCell({ children: [new Paragraph({ text: ((activity.totalTime || 0) / (1000 * 60 * 60)).toFixed(2) })] }),
                         new TableCell({ children: [new Paragraph({ text: activity.createdAt ? new Date(activity.createdAt).toLocaleDateString('pt-BR') : '' })] }),
@@ -1126,14 +1211,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
 
         const buffer = await Packer.toBuffer(doc);
-        
+
         res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
         res.setHeader('Content-Disposition', 'attachment; filename="relatorio.docx"');
         res.send(buffer);
       } else if (format === 'pdf') {
         // Generate PDF using Puppeteer
         const puppeteer = await import('puppeteer');
-        
+
         try {
           const browser = await puppeteer.launch({
             headless: true,
@@ -1378,14 +1463,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
                       ${activity.description ? `<p class="activity-description">${activity.description}</p>` : ''}
                     </div>
                     <div class="badges">
-                      <span class="badge badge-${activity.status === 'completed' ? 'completed' : 
-                        activity.status === 'in_progress' ? 'in-progress' :
-                        activity.status === 'paused' ? 'paused' :
-                        activity.status === 'cancelled' ? 'cancelled' : 'next'}">
-                        ${activity.status === 'completed' ? 'Concluída' : 
-                          activity.status === 'in_progress' ? 'Em Andamento' :
-                          activity.status === 'paused' ? 'Pausada' :
-                          activity.status === 'cancelled' ? 'Cancelada' : 'Pendente'}
+                      <span class="badge badge-${activity.status === 'completed' ? 'completed' :
+              activity.status === 'in_progress' ? 'in-progress' :
+                activity.status === 'paused' ? 'paused' :
+                  activity.status === 'cancelled' ? 'cancelled' : 'next'}">
+                        ${activity.status === 'completed' ? 'Concluída' :
+              activity.status === 'in_progress' ? 'Em Andamento' :
+                activity.status === 'paused' ? 'Pausada' :
+                  activity.status === 'cancelled' ? 'Cancelada' : 'Pendente'}
                       </span>
                       <span class="badge badge-${activity.priority === 'high' ? 'high' : activity.priority === 'medium' ? 'medium' : 'low'}">
                         ${activity.priority === 'high' ? 'Alta' : activity.priority === 'medium' ? 'Média' : 'Baixa'}
@@ -1470,7 +1555,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           `;
 
           await page.setContent(htmlContent, { waitUntil: 'networkidle0' });
-          
+
           const pdfBuffer = await page.pdf({
             format: 'A4',
             printBackground: true,
@@ -1524,7 +1609,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (user.role === 'collaborator' && activity.collaboratorId !== userId) {
         return res.status(403).json({ message: "Access denied" });
       }
-      
+
       if (user.role === 'sector_chief' && activity.collaborator.sectorId !== user.sectorId) {
         return res.status(403).json({ message: "Access denied" });
       }
@@ -1546,11 +1631,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   wss.on('connection', (ws: WebSocketClient, req) => {
     console.log('WebSocket client connected');
-    
+
     ws.on('message', async (data) => {
       try {
         const message = JSON.parse(data.toString());
-        
+
         if (message.type === 'authenticate' && message.userId) {
           ws.userId = message.userId;
           const user = await storage.getUser(message.userId);
@@ -1586,7 +1671,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const user = await storage.getUser(req.user!.id);
       let projects;
-      
+
       if (user?.role === 'admin') {
         // Admins can see all projects
         projects = await storage.getProjects();
@@ -1597,7 +1682,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Collaborators can see projects they're assigned to or own
         projects = await storage.getProjectsByUser(user!.id);
       }
-      
+
       res.json(projects);
     } catch (error) {
       console.error("Error fetching projects:", error);
@@ -1617,9 +1702,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ownerId: req.user!.id,
         sectorId: user?.sectorId || req.body.sectorId
       });
-      
+
       const project = await storage.createProject(projectData);
-      
+
       // Broadcast to sector
       if (user?.sectorId) {
         broadcastToSector(user.sectorId, {
@@ -1627,7 +1712,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           data: project
         });
       }
-      
+
       res.status(201).json(project);
     } catch (error) {
       console.error("Error creating project:", error);
@@ -1640,21 +1725,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { id } = req.params;
       const user = await storage.getUser(req.user!.id);
       const project = await storage.getProjectById(id);
-      
+
       if (!project) {
         return res.status(404).json({ message: "Project not found" });
       }
-      
+
       // Check permissions
-      const hasAccess = user?.role === 'admin' || 
-                       project.ownerId === user?.id ||
-                       (user?.role === 'sector_chief' && project.sectorId === user.sectorId) ||
-                       await storage.isProjectMember(id, user!.id);
-      
+      const hasAccess = user?.role === 'admin' ||
+        project.ownerId === user?.id ||
+        (user?.role === 'sector_chief' && project.sectorId === user.sectorId) ||
+        await storage.isProjectMember(id, user!.id);
+
       if (!hasAccess) {
         return res.status(403).json({ message: "Access denied" });
       }
-      
+
       res.json(project);
     } catch (error) {
       console.error("Error fetching project:", error);
@@ -1667,23 +1752,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { id } = req.params;
       const user = await storage.getUser(req.user!.id);
       const project = await storage.getProjectById(id);
-      
+
       if (!project) {
         return res.status(404).json({ message: "Project not found" });
       }
-      
+
       // Check permissions - only project owner, sector chief, or admin can update
-      const canUpdate = user?.role === 'admin' || 
-                       project.ownerId === user?.id ||
-                       (user?.role === 'sector_chief' && project.sectorId === user.sectorId);
-      
+      const canUpdate = user?.role === 'admin' ||
+        project.ownerId === user?.id ||
+        (user?.role === 'sector_chief' && project.sectorId === user.sectorId);
+
       if (!canUpdate) {
         return res.status(403).json({ message: "Access denied" });
       }
-      
+
       const updates = insertProjectSchema.partial().parse(req.body);
       const updatedProject = await storage.updateProject(id, updates);
-      
+
       // Broadcast to sector
       if (project.sectorId) {
         broadcastToSector(project.sectorId, {
@@ -1691,7 +1776,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           data: updatedProject
         });
       }
-      
+
       res.json(updatedProject);
     } catch (error) {
       console.error("Error updating project:", error);
@@ -1704,20 +1789,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { id } = req.params;
       const user = await storage.getUser(req.user!.id);
       const project = await storage.getProjectById(id);
-      
+
       if (!project) {
         return res.status(404).json({ message: "Project not found" });
       }
-      
+
       // Check permissions - only project owner or admin can delete
       const canDelete = user?.role === 'admin' || project.ownerId === user?.id;
-      
+
       if (!canDelete) {
         return res.status(403).json({ message: "Access denied" });
       }
-      
+
       await storage.deleteProject(id);
-      
+
       // Broadcast to sector
       if (project.sectorId) {
         broadcastToSector(project.sectorId, {
@@ -1725,7 +1810,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           data: { id }
         });
       }
-      
+
       res.status(204).send();
     } catch (error) {
       console.error("Error deleting project:", error);
@@ -1739,25 +1824,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { id } = req.params;
       const user = await storage.getUser(req.user!.id);
       const project = await storage.getProjectById(id);
-      
+
       if (!project) {
         return res.status(404).json({ message: "Project not found" });
       }
-      
+
       // Check permissions
-      const canAddMembers = user?.role === 'admin' || 
-                           project.ownerId === user?.id ||
-                           (user?.role === 'sector_chief' && project.sectorId === user.sectorId);
-      
+      const canAddMembers = user?.role === 'admin' ||
+        project.ownerId === user?.id ||
+        (user?.role === 'sector_chief' && project.sectorId === user.sectorId);
+
       if (!canAddMembers) {
         return res.status(403).json({ message: "Access denied" });
       }
-      
+
       const memberData = insertProjectMemberSchema.parse({
         ...req.body,
         projectId: id
       });
-      
+
       const member = await storage.addProjectMember(memberData);
       res.status(201).json(member);
     } catch (error) {
@@ -1771,21 +1856,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { projectId, userId } = req.params;
       const user = await storage.getUser(req.user!.id);
       const project = await storage.getProjectById(projectId);
-      
+
       if (!project) {
         return res.status(404).json({ message: "Project not found" });
       }
-      
+
       // Check permissions
-      const canRemoveMembers = user?.role === 'admin' || 
-                              project.ownerId === user?.id ||
-                              (user?.role === 'sector_chief' && project.sectorId === user.sectorId) ||
-                              userId === user?.id; // Users can remove themselves
-      
+      const canRemoveMembers = user?.role === 'admin' ||
+        project.ownerId === user?.id ||
+        (user?.role === 'sector_chief' && project.sectorId === user.sectorId) ||
+        userId === user?.id; // Users can remove themselves
+
       if (!canRemoveMembers) {
         return res.status(403).json({ message: "Access denied" });
       }
-      
+
       await storage.removeProjectMember(projectId, userId);
       res.status(204).send();
     } catch (error) {
