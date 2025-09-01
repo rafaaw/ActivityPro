@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useAuth } from "@/hooks/useAuth";
+import { usePlants } from "@/hooks/usePlants";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
 import { useState, useMemo } from "react";
@@ -66,6 +67,9 @@ export default function Reports() {
     enabled: !!user && Object.keys(appliedFilters).length > 0,
   });
 
+  // Fetch plants for filter options
+  const { data: plants = [], isLoading: plantsLoading } = usePlants();
+
   // Fetch filter options from backend
   const { data: filterOptionsData } = useQuery({
     queryKey: ['/api/reports/filter-options'],
@@ -74,12 +78,12 @@ export default function Reports() {
 
   const filterOptions = useMemo(() => {
     return {
-      plants: filterOptionsData?.plants || [],
-      projects: filterOptionsData?.projects || [],
-      requesters: filterOptionsData?.requesters || [],
-      collaborators: filterOptionsData?.collaborators || []
+      plants: plants.map(plant => plant.name), // Use plant names from usePlants hook
+      projects: (filterOptionsData as any)?.projects || [],
+      requesters: (filterOptionsData as any)?.requesters || [],
+      collaborators: (filterOptionsData as any)?.collaborators || []
     };
-  }, [filterOptionsData]);
+  }, [plants, filterOptionsData]);
 
   const exportMutation = useMutation({
     mutationFn: async (format: 'csv' | 'excel' | 'pdf') => {
@@ -228,9 +232,15 @@ export default function Reports() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">Todas as plantas</SelectItem>
-                      {filterOptions.plants.map((plant) => (
-                        <SelectItem key={plant} value={plant}>{plant}</SelectItem>
-                      ))}
+                      {plantsLoading ? (
+                        <SelectItem value="__loading__" disabled>Carregando plantas...</SelectItem>
+                      ) : plants.length === 0 ? (
+                        <SelectItem value="__empty__" disabled>Nenhuma planta disponível</SelectItem>
+                      ) : (
+                        plants.map((plant) => (
+                          <SelectItem key={plant.id} value={plant.name}>{plant.name}</SelectItem>
+                        ))
+                      )}
                     </SelectContent>
                   </Select>
                 </div>
@@ -247,7 +257,7 @@ export default function Reports() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">Todos os projetos</SelectItem>
-                      {filterOptions.projects.map((project) => (
+                      {filterOptions.projects.map((project: string) => (
                         <SelectItem key={project} value={project}>{project}</SelectItem>
                       ))}
                     </SelectContent>
@@ -266,7 +276,7 @@ export default function Reports() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">Todos os solicitantes</SelectItem>
-                      {filterOptions.requesters.map((requester) => (
+                      {filterOptions.requesters.map((requester: string) => (
                         <SelectItem key={requester} value={requester}>{requester}</SelectItem>
                       ))}
                     </SelectContent>
@@ -340,6 +350,27 @@ export default function Reports() {
                   />
                 </div>
 
+                {/* Status Filter */}
+                <div className="space-y-2">
+                  <Label className="flex items-center">
+                    <CheckCircle className="w-4 h-4 mr-1" />
+                    Status
+                  </Label>
+                  <Select onValueChange={(value) => updateFilters('status', value === 'all' ? undefined : [value])}>
+                    <SelectTrigger data-testid="select-status-filter">
+                      <SelectValue placeholder="Todos os status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Todos os status</SelectItem>
+                      <SelectItem value="next">Próximas</SelectItem>
+                      <SelectItem value="in_progress">Em Andamento</SelectItem>
+                      <SelectItem value="paused">Pausadas</SelectItem>
+                      <SelectItem value="completed">Concluídas</SelectItem>
+                      <SelectItem value="cancelled">Canceladas</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
                 {/* Show Time Column */}
                 <div className="space-y-2">
                   <Label className="flex items-center">
@@ -397,8 +428,8 @@ export default function Reports() {
                       <div className="flex items-start justify-between mb-3">
                         <div className="flex-1">
                           <h3 className="font-semibold text-lg mb-1">{activity.title}</h3>
-                          {activity.description && (
-                            <p className="text-muted-foreground text-sm mb-2">{activity.description}</p>
+                          {activity.observations && (
+                            <p className="text-muted-foreground text-sm mb-2">{activity.observations}</p>
                           )}
                         </div>
                         <div className="flex items-center space-x-2">

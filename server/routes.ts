@@ -7,6 +7,9 @@ import { insertActivitySchema, insertSubtaskSchema, insertTimeAdjustmentLogSchem
 import { z } from "zod";
 import bcrypt from "bcryptjs";
 import { Document, Packer, Paragraph, HeadingLevel, TextRun, AlignmentType, Table, TableRow, TableCell, WidthType } from "docx";
+import { upload, getFilePath, getFileUrl, deleteFile, UPLOAD_BASE_PATH } from "./uploadConfig";
+import path from "path";
+import fs from "fs";
 
 interface WebSocketClient extends WebSocket {
   userId?: string;
@@ -770,6 +773,186 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // File upload routes
+  app.post('/api/activities/:activityId/upload-evidence', isAuthenticated, upload.single('file'), async (req: any, res) => {
+    try {
+      console.log(`[UPLOAD] Iniciando upload para atividade ${req.params.activityId}`);
+      const { activityId } = req.params;
+      const userId = req.user.id;
+
+      if (!req.file) {
+        console.log(`[UPLOAD] Nenhum arquivo foi enviado`);
+        return res.status(400).json({ message: "Nenhum arquivo foi enviado" });
+      }
+
+      console.log(`[UPLOAD] Arquivo recebido: ${req.file.originalname}, tamanho: ${req.file.size}, salvo em: ${req.file.path}`);
+
+      // Verificar se a atividade existe e se o usuário tem permissão
+      const activity = await storage.getActivity(activityId);
+      if (!activity) {
+        console.log(`[UPLOAD] Atividade ${activityId} não encontrada`);
+        // Deletar arquivo se atividade não existir
+        await deleteFile(req.file.path);
+        return res.status(404).json({ message: "Activity not found" });
+      }
+
+      // Verificar permissão (apenas o colaborador da atividade pode fazer upload)
+      if (activity.collaboratorId !== userId) {
+        console.log(`[UPLOAD] Usuário ${userId} não tem permissão para atividade ${activityId}`);
+        // Deletar arquivo se usuário não tem permissão
+        await deleteFile(req.file.path);
+        return res.status(403).json({ message: "Access denied" });
+      }
+
+      // Gerar URL relativa do arquivo
+      const fileUrl = getFileUrl(req.file.path);
+      console.log(`[UPLOAD] URL do arquivo gerada: ${fileUrl}`);
+
+      // Atualizar atividade com URL da evidência
+      const updatedActivity = await storage.updateActivity(activityId, {
+        evidenceUrl: fileUrl
+      });
+
+      console.log(`[UPLOAD] Upload concluído com sucesso para atividade ${activityId}`);
+
+      res.json({
+        message: "Arquivo enviado com sucesso",
+        file: {
+          originalName: req.file.originalname,
+          filename: req.file.filename,
+          size: req.file.size,
+          mimetype: req.file.mimetype,
+          url: fileUrl
+        },
+        activity: updatedActivity
+      });
+
+    } catch (error) {
+      console.error("Error uploading file:", error);
+
+      // Tentar deletar arquivo em caso de erro
+      if (req.file) {
+        try {
+          await deleteFile(req.file.path);
+          console.log(`[UPLOAD] Arquivo deletado após erro: ${req.file.path}`);
+        } catch (deleteError) {
+          console.error("Error deleting file after upload failure:", deleteError);
+        }
+      }
+
+      res.status(500).json({
+        message: "Erro ao enviar arquivo",
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
+  // Rota para servir arquivos
+  app.get('/api/files/*', isAuthenticated, async (req: any, res) => {
+    try {
+      const filePath = req.params[0]; // Captura tudo depois de /api/files/
+      const fullPath = getFilePath(filePath);
+
+      console.log(`[SERVE] Tentando servir arquivo: ${fullPath}`);
+
+      // Verificar se arquivo existe
+      if (!fs.existsSync(fullPath)) {
+        console.log(`[SERVE] Arquivo não encontrado: ${fullPath}`);
+        return res.status(404).json({ message: "Arquivo não encontrado" });
+      }
+
+      // Verificar se usuário tem permissão para acessar o arquivo
+      // Extrair activityId do nome do arquivo (formato: activity_ID_timestamp_name.ext)
+      const filename = path.basename(fullPath);
+      const activityIdMatch = filename.match(/^activity_([^_]+)_/);
+
+      if (activityIdMatch) {
+        const activityId = activityIdMatch[1];
+        const activity = await storage.getActivity(activityId);
+
+        if (activity) {
+          const userId = req.user.id;
+          const userRole = req.user.role;
+          const userSectorId = req.user.sectorId;
+
+          // Verificar permissão: colaborador da atividade, admin, ou chefe do mesmo setor
+          const hasPermission =
+            activity.collaboratorId === userId ||
+            userRole === 'admin' ||
+            (userRole === 'sector_chief' && activity.collaborator?.sectorId === userSectorId);
+
+          if (!hasPermission) {
+            console.log(`[SERVE] Acesso negado ao arquivo ${filename} para usuário ${userId}`);
+            return res.status(403).json({ message: "Acesso negado ao arquivo" });
+          }
+        }
+      }
+
+      console.log(`[SERVE] Servindo arquivo: ${fullPath}`);
+      // Servir arquivo
+      res.sendFile(path.resolve(fullPath));
+
+    } catch (error) {
+      console.error("Error serving file:", error);
+      res.status(500).json({
+        message: "Erro ao acessar arquivo",
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
+  // Rota para deletar evidência
+  app.delete('/api/activities/:activityId/evidence', isAuthenticated, async (req: any, res) => {
+    try {
+      const { activityId } = req.params;
+      const userId = req.user.id;
+
+      console.log(`[DELETE] Tentando deletar evidência da atividade ${activityId}`);
+
+      // Verificar se a atividade existe e se o usuário tem permissão
+      const activity = await storage.getActivity(activityId);
+      if (!activity) {
+        return res.status(404).json({ message: "Activity not found" });
+      }
+
+      // Verificar permissão
+      if (activity.collaboratorId !== userId) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+
+      // Deletar arquivo físico se existir
+      if (activity.evidenceUrl) {
+        try {
+          const fullPath = getFilePath(activity.evidenceUrl);
+          await deleteFile(fullPath);
+          console.log(`[DELETE] Arquivo deletado: ${fullPath}`);
+        } catch (deleteError) {
+          console.warn("Could not delete file:", deleteError);
+          // Não retornar erro, pois o importante é limpar a referência no banco
+        }
+      }
+
+      // Limpar URL da evidência na atividade
+      const updatedActivity = await storage.updateActivity(activityId, {
+        evidenceUrl: null
+      });
+
+      console.log(`[DELETE] Evidência removida da atividade ${activityId}`);
+
+      res.json({
+        message: "Evidência removida com sucesso",
+        activity: updatedActivity
+      });
+
+    } catch (error) {
+      console.error("Error deleting evidence:", error);
+      res.status(500).json({
+        message: "Erro ao remover evidência",
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
   // Dashboard data routes
   app.get('/api/dashboard/stats', isAuthenticated, async (req: any, res) => {
     try {
@@ -903,7 +1086,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Extract unique filter options from actual data
-      const plants = Array.from(new Set(activities.map((a: any) => a.plant).filter(Boolean)));
+      const plants = await storage.getPlants(); // Get all registered plants instead of just from activities
+      const plantNames = plants.map((p: any) => p.name).sort();
       const projects = Array.from(new Set(activities.map((a: any) => a.project).filter(Boolean)));
       const requesters = Array.from(new Set(activities.map((a: any) => a.requester).filter(Boolean)));
 
@@ -916,7 +1100,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       res.json({
-        plants: plants.sort(),
+        plants: plantNames,
         projects: projects.sort(),
         requesters: requesters.sort(),
         collaborators: collaborators.map(c => ({ id: c.id, username: c.username })).sort((a, b) => a.username.localeCompare(b.username))
@@ -966,6 +1150,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (requester && activity.requester !== requester) matches = false;
         if (collaboratorId && activity.collaboratorId !== collaboratorId) matches = false;
         if (type && activity.type !== type) matches = false;
+        if (status && activity.status !== status) matches = false;
 
 
         // Filter by date range
@@ -1107,7 +1292,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         res.setHeader('Content-Disposition', 'attachment; filename="relatorio.csv"');
         res.send('\ufeff' + csvContent);
       } else if (format === 'docx') {
-        // Generate Word document
+        // Generate Word document with hierarchical format
         const doc = new Document({
           sections: [{
             children: [
@@ -1148,49 +1333,110 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 spacing: { after: 400 }
               }),
 
-              // Activities table header
+              // Activities section
               new Paragraph({
                 text: "Detalhamento das Atividades",
                 heading: HeadingLevel.HEADING_1,
                 spacing: { before: 400, after: 200 }
               }),
 
-              // Activities table
-              new Table({
-                width: { size: 100, type: WidthType.PERCENTAGE },
-                rows: [
-                  // Header row
-                  new TableRow({
+              // Generate hierarchical content for each activity
+              ...filteredActivities.slice(0, 50).flatMap((activity: any) => {
+                const activityParagraphs: any[] = [];
+
+                // Activity title
+                activityParagraphs.push(
+                  new Paragraph({
                     children: [
-                      new TableCell({ children: [new Paragraph({ text: "Título", alignment: AlignmentType.CENTER })] }),
-                      new TableCell({ children: [new Paragraph({ text: "Tipo", alignment: AlignmentType.CENTER })] }),
-                      new TableCell({ children: [new Paragraph({ text: "Status", alignment: AlignmentType.CENTER })] }),
-                      new TableCell({ children: [new Paragraph({ text: "Colaborador", alignment: AlignmentType.CENTER })] }),
-                      new TableCell({ children: [new Paragraph({ text: "Tempo (h)", alignment: AlignmentType.CENTER })] }),
-                      new TableCell({ children: [new Paragraph({ text: "Data", alignment: AlignmentType.CENTER })] }),
+                      new TextRun({
+                        text: activity.title || 'Sem título',
+                        bold: true,
+                        size: 28,
+                        color: "1a365d"
+                      }),
                     ],
-                  }),
-                  // Data rows
-                  ...filteredActivities.slice(0, 50).map((activity: any) => // Limit to 50 activities for performance
-                    new TableRow({
+                    spacing: { before: 200, after: 100 }
+                  })
+                );
+
+                // Activity details
+                const details = [];
+                if (activity.collaborator?.username) {
+                  details.push(`Colaborador: ${activity.collaborator.username}`);
+                }
+                if (activity.status) {
+                  const statusText = activity.status === 'completed' ? 'Concluída' :
+                    activity.status === 'in_progress' ? 'Em Andamento' :
+                      activity.status === 'paused' ? 'Pausada' :
+                        activity.status === 'cancelled' ? 'Cancelada' : 'Pendente';
+                  details.push(`Status: ${statusText}`);
+                }
+                if (activity.totalTime) {
+                  details.push(`Tempo: ${((activity.totalTime || 0) / (1000 * 60 * 60)).toFixed(2)}h`);
+                }
+                if (activity.createdAt) {
+                  details.push(`Criada em: ${new Date(activity.createdAt).toLocaleDateString('pt-BR')}`);
+                }
+
+                if (details.length > 0) {
+                  activityParagraphs.push(
+                    new Paragraph({
                       children: [
-                        new TableCell({ children: [new Paragraph({ text: activity.title || '' })] }),
-                        new TableCell({ children: [new Paragraph({ text: activity.type === 'simple' ? 'Simples' : 'Checklist' })] }),
-                        new TableCell({
-                          children: [new Paragraph({
-                            text: activity.status === 'completed' ? 'Concluída' :
-                              activity.status === 'in_progress' ? 'Em Andamento' :
-                                activity.status === 'paused' ? 'Pausada' :
-                                  activity.status === 'cancelled' ? 'Cancelada' : 'Pendente'
-                          })]
+                        new TextRun({
+                          text: details.join(' | '),
+                          size: 20,
+                          color: "666666"
                         }),
-                        new TableCell({ children: [new Paragraph({ text: activity.collaborator?.username || '' })] }),
-                        new TableCell({ children: [new Paragraph({ text: ((activity.totalTime || 0) / (1000 * 60 * 60)).toFixed(2) })] }),
-                        new TableCell({ children: [new Paragraph({ text: activity.createdAt ? new Date(activity.createdAt).toLocaleDateString('pt-BR') : '' })] }),
                       ],
+                      spacing: { after: 150 }
                     })
-                  )
-                ],
+                  );
+                }
+
+                // Subtasks
+                if (activity.subtasks && activity.subtasks.length > 0) {
+                  activity.subtasks.forEach((subtask: any) => {
+                    activityParagraphs.push(
+                      new Paragraph({
+                        children: [
+                          new TextRun({
+                            text: subtask.completed ? `• ✓ ${subtask.title}` : `• ${subtask.title}`,
+                            size: 24,
+                            color: "000000"
+                          }),
+                        ],
+                        indent: { left: 720 }, // Indent subtasks
+                        spacing: { after: 50 }
+                      })
+                    );
+                  });
+                } else {
+                  // If no subtasks, show a note
+                  activityParagraphs.push(
+                    new Paragraph({
+                      children: [
+                        new TextRun({
+                          text: "• Nenhuma subtarefa definida",
+                          size: 24,
+                          color: "999999",
+                          italics: true
+                        }),
+                      ],
+                      indent: { left: 720 },
+                      spacing: { after: 50 }
+                    })
+                  );
+                }
+
+                // Add spacing between activities
+                activityParagraphs.push(
+                  new Paragraph({
+                    text: "",
+                    spacing: { after: 300 }
+                  })
+                );
+
+                return activityParagraphs;
               }),
 
               // Footer note if more than 50 activities

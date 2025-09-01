@@ -36,12 +36,52 @@ export default function CompletionDialog({
   const [evidenceUrl, setEvidenceUrl] = useState<string>("");
   const [evidenceFile, setEvidenceFile] = useState<File | null>(null);
   const [notes, setNotes] = useState("");
+  const [isUploading, setIsUploading] = useState(false);
+
+  // Mutation para upload de arquivo
+  const uploadMutation = useMutation({
+    mutationFn: async (file: File) => {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const response = await fetch(`/api/activities/${activityId}/upload-evidence`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Erro ao enviar arquivo');
+      }
+
+      return response.json();
+    },
+    onSuccess: (data) => {
+      setEvidenceUrl(data.file.url);
+      toast({
+        title: "Arquivo enviado",
+        description: `${data.file.originalName} foi enviado com sucesso`,
+      });
+    },
+    onError: (error) => {
+      console.error('Upload error:', error);
+      setEvidenceFile(null);
+      setEvidenceUrl("");
+      toast({
+        title: "Erro no upload",
+        description: error instanceof Error ? error.message : "Erro ao enviar arquivo",
+        variant: "destructive",
+      });
+    },
+    onSettled: () => {
+      setIsUploading(false);
+    }
+  });
 
   const completeMutation = useMutation({
-    mutationFn: async ({ evidenceUrl, notes }: { evidenceUrl?: string; notes?: string }) => {
+    mutationFn: async ({ notes }: { notes?: string }) => {
       await apiRequest("PATCH", `/api/activities/${activityId}`, {
         status: "completed",
-        evidenceUrl,
         notes,
       });
     },
@@ -83,24 +123,66 @@ export default function CompletionDialog({
   };
 
   const handleComplete = () => {
-    completeMutation.mutate({ evidenceUrl: evidenceUrl || undefined, notes: notes || undefined });
+    completeMutation.mutate({ notes: notes || undefined });
   };
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
+      // Validar tipo de arquivo
+      const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp', 'application/pdf', 'text/plain'];
+      if (!allowedTypes.includes(file.type)) {
+        toast({
+          title: "Tipo de arquivo não permitido",
+          description: "Selecione um arquivo de imagem, PDF ou texto",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Validar tamanho (10MB)
+      const maxSize = 10 * 1024 * 1024;
+      if (file.size > maxSize) {
+        toast({
+          title: "Arquivo muito grande",
+          description: "O arquivo deve ter no máximo 10MB",
+          variant: "destructive",
+        });
+        return;
+      }
+
       setEvidenceFile(file);
-      setEvidenceUrl(file.name); // Usar nome do arquivo temporariamente
-      toast({
-        title: "Arquivo selecionado",
-        description: `${file.name} está pronto para upload`,
-      });
+      setEvidenceUrl(""); // Limpar URL anterior
+
+      // Fazer upload imediatamente
+      setIsUploading(true);
+      uploadMutation.mutate(file);
     }
   };
 
-  const removeEvidence = () => {
+  const removeEvidence = async () => {
+    try {
+      // Se há uma URL de evidência (arquivo já foi enviado), deletar do servidor
+      if (evidenceUrl) {
+        await apiRequest("DELETE", `/api/activities/${activityId}/evidence`);
+        toast({
+          title: "Evidência removida",
+          description: "Arquivo removido com sucesso",
+        });
+      }
+    } catch (error) {
+      console.error('Error removing evidence:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao remover evidência",
+        variant: "destructive",
+      });
+    }
+
+    // Limpar estado local
     setEvidenceUrl("");
     setEvidenceFile(null);
+
     // Reset input file
     const fileInput = document.getElementById('evidence-file') as HTMLInputElement;
     if (fileInput) {
@@ -128,23 +210,52 @@ export default function CompletionDialog({
             <p className="text-sm text-muted-foreground">
               Anexe um arquivo como comprovante da conclusão da atividade.
             </p>
-            
-            {evidenceFile ? (
-              <div className="flex items-center justify-between p-3 bg-green-50 border border-green-200 rounded-lg">
+
+            {(evidenceFile || evidenceUrl) ? (
+              <div className={`flex items-center justify-between p-3 rounded-lg ${isUploading
+                  ? 'bg-blue-50 border border-blue-200'
+                  : evidenceUrl
+                    ? 'bg-green-50 border border-green-200'
+                    : 'bg-yellow-50 border border-yellow-200'
+                }`}>
                 <div className="flex items-center space-x-2">
-                  <FileText className="text-green-600 w-4 h-4" />
-                  <span className="text-sm font-medium text-green-700">
-                    {evidenceFile.name}
+                  <FileText className={`w-4 h-4 ${isUploading
+                      ? 'text-blue-600'
+                      : evidenceUrl
+                        ? 'text-green-600'
+                        : 'text-yellow-600'
+                    }`} />
+                  <span className={`text-sm font-medium ${isUploading
+                      ? 'text-blue-700'
+                      : evidenceUrl
+                        ? 'text-green-700'
+                        : 'text-yellow-700'
+                    }`}>
+                    {evidenceFile?.name || 'Arquivo anexado'}
                   </span>
-                  <span className="text-xs text-green-600">
-                    ({(evidenceFile.size / 1024 / 1024).toFixed(1)} MB)
-                  </span>
+                  {evidenceFile && (
+                    <span className={`text-xs ${isUploading
+                        ? 'text-blue-600'
+                        : evidenceUrl
+                          ? 'text-green-600'
+                          : 'text-yellow-600'
+                      }`}>
+                      ({(evidenceFile.size / 1024 / 1024).toFixed(1)} MB)
+                    </span>
+                  )}
+                  {isUploading && (
+                    <span className="text-xs text-blue-600">Enviando...</span>
+                  )}
+                  {evidenceUrl && !isUploading && (
+                    <span className="text-xs text-green-600">✓ Enviado</span>
+                  )}
                 </div>
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={removeEvidence}
-                  className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                  disabled={isUploading}
+                  className="text-red-600 hover:text-red-700 hover:bg-red-50 disabled:opacity-50"
                   data-testid="button-remove-evidence"
                 >
                   <X className="w-4 h-4" />

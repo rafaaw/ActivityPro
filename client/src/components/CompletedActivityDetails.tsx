@@ -59,13 +59,9 @@ export default function CompletedActivityDetails({
 
   const handleDownloadEvidence = () => {
     if (activity.evidenceUrl) {
-      // Create a temporary link and click it to download
-      const link = document.createElement('a');
-      link.href = activity.evidenceUrl;
-      link.download = `evidencia-${activity.title.replace(/\s+/g, '-')}.pdf`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+      // Use a nova API para servir arquivos com autenticação
+      const fileUrl = `/api/files${activity.evidenceUrl}`;
+      window.open(fileUrl, '_blank');
     }
   };
 

@@ -20,6 +20,8 @@ export default defineConfig({
     emptyOutDir: true,
   },
   server: {
+    host: "0.0.0.0", // Permite acesso de qualquer IP
+    port: 5001, // Porta do Vite (diferente do servidor)
     fs: {
       strict: true,
       deny: ["**/.*"],
