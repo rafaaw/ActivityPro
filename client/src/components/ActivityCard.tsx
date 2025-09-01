@@ -3,11 +3,11 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { 
-  Play, 
-  Pause, 
-  CheckCircle, 
-  X, 
+import {
+  Play,
+  Pause,
+  CheckCircle,
+  X,
   Edit,
   Copy,
   Clock,
@@ -191,9 +191,9 @@ export default function ActivityCard({ activity }: ActivityCardProps) {
   };
 
   const handleSubtaskToggle = (subtaskId: string, currentCompleted: boolean) => {
-    updateSubtaskMutation.mutate({ 
-      subtaskId, 
-      completed: !currentCompleted 
+    updateSubtaskMutation.mutate({
+      subtaskId,
+      completed: !currentCompleted
     });
   };
 
@@ -212,6 +212,7 @@ export default function ActivityCard({ activity }: ActivityCardProps) {
       plant: activity.plant,
       project: activity.project,
       requester: activity.requester,
+      observations: activity.observations,
       // Para cópia, convertemos subtasks para o formato esperado pelo modal
       ...(activity.subtasks && activity.subtasks.length > 0 && {
         subtasks: activity.subtasks.map(subtask => ({
@@ -223,11 +224,11 @@ export default function ActivityCard({ activity }: ActivityCardProps) {
         }))
       })
     };
-    
+
     console.log('Dados para cópia:', copyData);
-    
+
     openModal(copyData);
-    
+
     toast({
       title: "Atividade copiada",
       description: "Você pode modificar os dados antes de criar",
@@ -237,7 +238,7 @@ export default function ActivityCard({ activity }: ActivityCardProps) {
   // Remove old handleCancel - now using modal
 
   return (
-    <Card 
+    <Card
       className={cn(
         "transition-all duration-200 hover:shadow-md",
         getStatusColor(activity.status)
@@ -264,6 +265,16 @@ export default function ActivityCard({ activity }: ActivityCardProps) {
                   <span data-testid="text-activity-requester">{activity.requester}</span>
                 </>
               )}
+              {activity.observations && (
+                <>
+                  <span>•</span>
+                  <span data-testid="text-activity-observations" className="italic text-gray-600">
+                    {activity.observations.length > 50
+                      ? `${activity.observations.substring(0, 50)}...`
+                      : activity.observations}
+                  </span>
+                </>
+              )}
               {activity.totalTime && activity.totalTime > 0 && (
                 <>
                   <span>•</span>
@@ -275,7 +286,7 @@ export default function ActivityCard({ activity }: ActivityCardProps) {
               )}
             </div>
           </div>
-          
+
           <div className="flex items-center space-x-2">
             <Badge variant={getPriorityColor(activity.priority)} data-testid="badge-activity-priority">
               {getPriorityText(activity.priority)}
@@ -294,10 +305,10 @@ export default function ActivityCard({ activity }: ActivityCardProps) {
                 {getProgressPercentage()}%
               </span>
             </div>
-            
+
             {/* Progress Bar */}
             <div className="w-full bg-muted rounded-full h-1.5 mb-3">
-              <div 
+              <div
                 className="bg-primary h-1.5 rounded-full transition-all duration-300"
                 style={{ width: `${getProgressPercentage()}%` }}
               ></div>
@@ -307,17 +318,16 @@ export default function ActivityCard({ activity }: ActivityCardProps) {
               {activity.subtasks && activity.subtasks.length > 0 ? (
                 <>
                   {activity.subtasks.map((subtask) => (
-                    <div 
-                      key={subtask.id} 
+                    <div
+                      key={subtask.id}
                       className="flex items-center space-x-2 text-xs group hover:bg-muted/30 p-1 rounded transition-colors"
                       data-testid={`subtask-${subtask.id}`}
                     >
                       <button
                         onClick={() => handleSubtaskToggle(subtask.id, subtask.completed || false)}
                         disabled={updateSubtaskMutation.isPending || activity.status === 'next' || activity.status === 'cancelled'}
-                        className={`flex items-center justify-center w-4 h-4 transition-transform ${
-                          activity.status === 'next' || activity.status === 'cancelled' ? 'cursor-not-allowed opacity-50' : 'hover:scale-110'
-                        }`}
+                        className={`flex items-center justify-center w-4 h-4 transition-transform ${activity.status === 'next' || activity.status === 'cancelled' ? 'cursor-not-allowed opacity-50' : 'hover:scale-110'
+                          }`}
                         data-testid={`checkbox-subtask-${subtask.id}`}
                       >
                         {subtask.completed ? (
@@ -328,8 +338,8 @@ export default function ActivityCard({ activity }: ActivityCardProps) {
                       </button>
                       <span className={cn(
                         "flex-1 transition-all duration-200",
-                        subtask.completed 
-                          ? "line-through text-muted-foreground" 
+                        subtask.completed
+                          ? "line-through text-muted-foreground"
                           : "text-foreground group-hover:text-primary"
                       )}>
                         {subtask.title}
@@ -339,8 +349,8 @@ export default function ActivityCard({ activity }: ActivityCardProps) {
                 </>
               ) : (
                 <div className="text-xs text-muted-foreground italic p-2 text-center border border-dashed rounded">
-                  {activity.status === 'in_progress' 
-                    ? "Carregando subtarefas..." 
+                  {activity.status === 'in_progress'
+                    ? "Carregando subtarefas..."
                     : "Nenhuma subtarefa definida"
                   }
                 </div>
@@ -365,7 +375,7 @@ export default function ActivityCard({ activity }: ActivityCardProps) {
                 Iniciar
               </Button>
             )}
-            
+
             {canPause && (
               <Button
                 size="sm"
@@ -379,7 +389,7 @@ export default function ActivityCard({ activity }: ActivityCardProps) {
                 Pausar
               </Button>
             )}
-            
+
             {canComplete && (
               <Button
                 size="sm"
@@ -393,7 +403,7 @@ export default function ActivityCard({ activity }: ActivityCardProps) {
                 Concluir
               </Button>
             )}
-            
+
             {(activity.status === 'completed' || activity.status === 'cancelled') && (
               <Button
                 size="sm"
@@ -420,7 +430,7 @@ export default function ActivityCard({ activity }: ActivityCardProps) {
                 <Edit className="w-3 h-3" />
               </Button>
             )}
-            
+
             <Button
               size="sm"
               variant="ghost"
@@ -430,7 +440,7 @@ export default function ActivityCard({ activity }: ActivityCardProps) {
             >
               <Copy className="w-3 h-3" />
             </Button>
-            
+
             {canAdjustTime && (
               <Button
                 size="sm"
@@ -442,7 +452,7 @@ export default function ActivityCard({ activity }: ActivityCardProps) {
                 <Clock className="w-3 h-3" />
               </Button>
             )}
-            
+
             {activity.status === 'next' && (
               <Button
                 size="sm"

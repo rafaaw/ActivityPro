@@ -131,6 +131,7 @@ export const activities = pgTable("activities", {
   projectId: varchar("project_id").references(() => projects.id),
   project: varchar("project", { length: 255 }), // Manter para compatibilidade
   requester: varchar("requester", { length: 255 }),
+  observations: text("observations"), // observações da atividade
   status: activityStatusEnum("status").notNull().default('next'),
   totalTime: integer("total_time").default(0), // in seconds
   collaboratorId: varchar("collaborator_id").references(() => users.id).notNull(),
@@ -385,6 +386,7 @@ export type ActivityWithDetails = Activity & {
   plantRef?: Plant;
   subtasks?: Subtask[];
   sessions?: ActivitySession[];
+  activeSession?: ActivitySession | null;
 };
 
 export type ProjectWithDetails = Project & {

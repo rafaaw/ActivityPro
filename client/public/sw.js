@@ -54,13 +54,16 @@ self.addEventListener('fetch', (event) => {
           return response;
         }
 
-        // Clone the response
-        const responseToCache = response.clone();
+        // Only cache GET requests - other methods like PATCH, POST, PUT, DELETE are not cacheable
+        if (event.request.method === 'GET') {
+          // Clone the response
+          const responseToCache = response.clone();
 
-        caches.open(CACHE_NAME)
-          .then((cache) => {
-            cache.put(event.request, responseToCache);
-          });
+          caches.open(CACHE_NAME)
+            .then((cache) => {
+              cache.put(event.request, responseToCache);
+            });
+        }
 
         return response;
       })

@@ -23,17 +23,23 @@ export default function ActiveTimer({ activity }: ActiveTimerProps) {
 
   // Update timer every second
   useEffect(() => {
-    if (activity.status !== 'in_progress' || !activity.startedAt) return;
+    if (activity.status !== 'in_progress') return;
 
     const interval = setInterval(() => {
-      const startTime = new Date(activity.startedAt!).getTime();
+      // Use active session start time if available, otherwise fallback to activity startedAt
+      const startTime = activity.activeSession?.startedAt
+        ? new Date(activity.activeSession.startedAt).getTime()
+        : activity.startedAt
+          ? new Date(activity.startedAt).getTime()
+          : Date.now();
+
       const now = Date.now();
       const elapsed = Math.floor((now - startTime) / 1000);
       setElapsedTime((activity.totalTime || 0) + elapsed);
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [activity.startedAt, activity.totalTime, activity.status]);
+  }, [activity.startedAt, activity.totalTime, activity.status, activity.activeSession]);
 
   const updateActivityMutation = useMutation({
     mutationFn: async (updates: any) => {
@@ -144,9 +150,9 @@ export default function ActiveTimer({ activity }: ActiveTimerProps) {
   };
 
   const handleSubtaskToggle = (subtaskId: string, currentCompleted: boolean) => {
-    updateSubtaskMutation.mutate({ 
-      subtaskId, 
-      completed: !currentCompleted 
+    updateSubtaskMutation.mutate({
+      subtaskId,
+      completed: !currentCompleted
     });
   };
 
@@ -188,16 +194,30 @@ export default function ActiveTimer({ activity }: ActiveTimerProps) {
                     <span className="hidden sm:inline truncate" data-testid="text-activity-project">{activity.project}</span>
                   </>
                 )}
+                {activity.requester && (
+                  <>
+                    <span className="hidden md:inline">•</span>
+                    <span className="hidden sm:inline truncate" data-testid="text-activity-requester">Sol: {activity.requester}</span>
+                  </>
+                )}
+                {activity.observations && (
+                  <>
+                    <span className="hidden md:inline">•</span>
+                    <span className="hidden lg:inline truncate italic" data-testid="text-activity-observations" title={activity.observations}>
+                      Obs: {activity.observations.length > 30 ? `${activity.observations.substring(0, 30)}...` : activity.observations}
+                    </span>
+                  </>
+                )}
               </div>
             </div>
           </div>
-          
+
           <div className="text-center md:text-right">
             <div className="text-2xl md:text-3xl font-bold" data-testid="text-elapsed-time">
               {formatTime(elapsedTime)}
             </div>
             <p className="text-white/80 text-xs md:text-sm">Tempo decorrido</p>
-            
+
             {/* Timer Controls */}
             <div className="flex items-center justify-center md:justify-end space-x-2 mt-2 md:mt-3">
               <Button
@@ -214,11 +234,10 @@ export default function ActiveTimer({ activity }: ActiveTimerProps) {
               <Button
                 variant="ghost"
                 size="sm"
-                className={`text-xs md:text-sm ${
-                  !areAllSubtasksCompleted() 
-                    ? 'bg-gray-500/50 hover:bg-gray-500/60 text-white/50 cursor-not-allowed' 
-                    : 'bg-white/20 hover:bg-white/30 text-white'
-                }`}
+                className={`text-xs md:text-sm ${!areAllSubtasksCompleted()
+                  ? 'bg-gray-500/50 hover:bg-gray-500/60 text-white/50 cursor-not-allowed'
+                  : 'bg-white/20 hover:bg-white/30 text-white'
+                  }`}
                 onClick={handleComplete}
                 disabled={updateActivityMutation.isPending || !areAllSubtasksCompleted()}
                 data-testid="button-complete-activity"
@@ -253,10 +272,10 @@ export default function ActiveTimer({ activity }: ActiveTimerProps) {
                 {getProgressPercentage()}%
               </span>
             </div>
-            
+
             {/* Progress Bar - Always visible */}
             <div className="w-full bg-white/20 rounded-full h-2 mb-4">
-              <div 
+              <div
                 className="bg-white h-2 rounded-full transition-all duration-300"
                 style={{ width: `${getProgressPercentage()}%` }}
               ></div>
@@ -267,8 +286,8 @@ export default function ActiveTimer({ activity }: ActiveTimerProps) {
               <div className="space-y-2 animate-in slide-in-from-top-2 duration-200">
                 {activity.subtasks && activity.subtasks.length > 0 ? (
                   activity.subtasks.map((subtask) => (
-                    <div 
-                      key={subtask.id} 
+                    <div
+                      key={subtask.id}
                       className="flex items-center space-x-3 text-sm group hover:bg-white/10 p-2 rounded transition-colors"
                       data-testid={`subtask-${subtask.id}`}
                     >
@@ -286,8 +305,8 @@ export default function ActiveTimer({ activity }: ActiveTimerProps) {
                       </button>
                       <span className={cn(
                         "flex-1 transition-all duration-200 text-white",
-                        subtask.completed 
-                          ? "line-through text-white/60" 
+                        subtask.completed
+                          ? "line-through text-white/60"
                           : "group-hover:text-white"
                       )}>
                         {subtask.title}
@@ -307,7 +326,7 @@ export default function ActiveTimer({ activity }: ActiveTimerProps) {
                 )}
               </div>
             )}
-            
+
           </div>
         )}
       </div>

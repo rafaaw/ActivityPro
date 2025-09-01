@@ -8,10 +8,10 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { 
-  FileText, 
-  Download, 
-  Clock, 
+import {
+  FileText,
+  Download,
+  Clock,
   Calendar,
   CheckSquare,
   MessageSquare,
@@ -108,7 +108,7 @@ export default function CompletedActivityDetails({
             </CardHeader>
             <CardContent>
               {/* Description would go here if available in schema */}
-              
+
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div className="flex items-center gap-2">
                   <Clock className="w-4 h-4 text-muted-foreground" />
@@ -118,7 +118,7 @@ export default function CompletedActivityDetails({
                   <Calendar className="w-4 h-4 text-muted-foreground" />
                   <span>
                     {activity.status === 'completed' ? 'Concluída' : 'Cancelada'} em: {
-                      activity.status === 'completed' 
+                      activity.status === 'completed'
                         ? (activity.completedAt ? format(new Date(activity.completedAt), 'dd/MM/yyyy HH:mm', { locale: ptBR }) : 'N/A')
                         : (activity.cancelledAt ? format(new Date(activity.cancelledAt), 'dd/MM/yyyy HH:mm', { locale: ptBR }) : 'N/A')
                     }
@@ -127,6 +127,23 @@ export default function CompletedActivityDetails({
               </div>
             </CardContent>
           </Card>
+
+          {/* Observations */}
+          {activity.observations && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <MessageSquare className="w-5 h-5" />
+                  Observações
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground">
+                  {activity.observations}
+                </p>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Subtasks */}
           {activity.type === 'checklist' && activity.subtasks && activity.subtasks.length > 0 && (
@@ -141,10 +158,9 @@ export default function CompletedActivityDetails({
                 <div className="space-y-2">
                   {activity.subtasks.map((subtask) => (
                     <div key={subtask.id} className="flex items-center gap-2">
-                      <CheckSquare 
-                        className={`w-4 h-4 ${
-                          subtask.completed ? 'text-green-600' : 'text-muted-foreground'
-                        }`} 
+                      <CheckSquare
+                        className={`w-4 h-4 ${subtask.completed ? 'text-green-600' : 'text-muted-foreground'
+                          }`}
                       />
                       <span className={subtask.completed ? 'line-through text-muted-foreground' : ''}>
                         {subtask.title}

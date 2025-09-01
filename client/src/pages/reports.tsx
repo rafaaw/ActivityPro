@@ -10,13 +10,13 @@ import { useAuth } from "@/hooks/useAuth";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
 import { useState, useMemo } from "react";
-import { 
-  Download, 
-  Filter, 
-  Calendar, 
-  Clock, 
-  Building, 
-  FolderOpen, 
+import {
+  Download,
+  Filter,
+  Calendar,
+  Clock,
+  Building,
+  FolderOpen,
   User,
   FileText,
   CheckCircle,
@@ -58,7 +58,7 @@ export default function Reports() {
           params.append(key, String(value));
         }
       });
-      
+
       const response = await fetch(`/api/reports/activities?${params.toString()}`);
       if (!response.ok) throw new Error('Failed to fetch activities');
       return response.json();
@@ -88,9 +88,9 @@ export default function Reports() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(appliedFilters),
       });
-      
+
       if (!response.ok) throw new Error('Export failed');
-      
+
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -403,14 +403,14 @@ export default function Reports() {
                         </div>
                         <div className="flex items-center space-x-2">
                           <Badge className={getStatusColor(activity.status)} data-testid={`badge-status-${activity.id}`}>
-                            {activity.status === 'completed' ? 'Concluída' : 
-                             activity.status === 'in_progress' ? 'Em Andamento' :
-                             activity.status === 'paused' ? 'Pausada' :
-                             activity.status === 'cancelled' ? 'Cancelada' : 'Pendente'}
+                            {activity.status === 'completed' ? 'Concluída' :
+                              activity.status === 'in_progress' ? 'Em Andamento' :
+                                activity.status === 'paused' ? 'Pausada' :
+                                  activity.status === 'cancelled' ? 'Cancelada' : 'Pendente'}
                           </Badge>
                           <Badge className={getPriorityColor(activity.priority)} data-testid={`badge-priority-${activity.id}`}>
                             {activity.priority === 'high' ? 'Alta' :
-                             activity.priority === 'medium' ? 'Média' : 'Baixa'}
+                              activity.priority === 'medium' ? 'Média' : 'Baixa'}
                           </Badge>
                         </div>
                       </div>
@@ -440,14 +440,22 @@ export default function Reports() {
                         )}
                       </div>
 
+                      {/* Observations */}
+                      {activity.observations && (
+                        <div className="mb-3 p-3 bg-muted/50 rounded-lg">
+                          <span className="text-muted-foreground text-sm">Observações:</span>
+                          <p className="text-sm mt-1">{activity.observations}</p>
+                        </div>
+                      )}
+
                       {/* Interactive Checklist */}
                       {activity.type === 'checklist' && activity.subtasks && activity.subtasks.length > 0 && (
                         <div className="mt-4">
                           <h4 className="font-medium mb-2">Subtarefas:</h4>
                           <div className="space-y-2">
                             {activity.subtasks.map((subtask) => (
-                              <div 
-                                key={subtask.id} 
+                              <div
+                                key={subtask.id}
                                 className="flex items-center space-x-2"
                                 data-testid={`subtask-${subtask.id}`}
                               >
@@ -461,7 +469,7 @@ export default function Reports() {
                                   }}
                                   data-testid={`checkbox-subtask-${subtask.id}`}
                                 />
-                                <span 
+                                <span
                                   className={subtask.completed ? 'line-through text-muted-foreground' : ''}
                                   data-testid={`text-subtask-${subtask.id}`}
                                 >

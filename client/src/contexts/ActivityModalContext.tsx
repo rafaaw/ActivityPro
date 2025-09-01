@@ -37,8 +37,8 @@ export function ActivityModalProvider({ children }: ActivityModalProviderProps) 
   const queryClient = useQueryClient();
 
   const createActivityMutation = useMutation({
-    mutationFn: async (data: InsertActivity & { 
-      subtasks?: { title: string }[] 
+    mutationFn: async (data: InsertActivity & {
+      subtasks?: { title: string }[]
       isRetroactive?: boolean
       retroactiveStartDate?: string
       retroactiveStartTime?: string
@@ -115,7 +115,7 @@ export function ActivityModalProvider({ children }: ActivityModalProviderProps) 
     setIsEditMode(isEdit || false);
     setIsOpen(true);
   };
-  
+
   const closeModal = () => {
     setIsOpen(false);
     setInitialData(undefined);
@@ -125,27 +125,29 @@ export function ActivityModalProvider({ children }: ActivityModalProviderProps) 
   return (
     <ActivityModalContext.Provider value={{ openModal, closeModal, isOpen, initialData, isEditMode }}>
       {children}
-      
+
       {/* Modal Global */}
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
+          <DialogHeader className="flex-shrink-0">
             <DialogTitle className="text-xl font-semibold gradient-text">
               {isEditMode ? 'Editar Atividade' : initialData ? 'Copiar Atividade' : 'Criar Nova Atividade'}
             </DialogTitle>
           </DialogHeader>
-          <ActivityForm
-            initialData={initialData}
-            onSubmit={(data) => {
-              if (isEditMode && initialData?.id) {
-                updateActivityMutation.mutate({ ...data, id: initialData.id });
-              } else {
-                createActivityMutation.mutate(data);
-              }
-            }}
-            isLoading={isEditMode ? updateActivityMutation.isPending : createActivityMutation.isPending}
-            onCancel={closeModal}
-          />
+          <div className="flex-1 overflow-y-auto">
+            <ActivityForm
+              initialData={initialData}
+              onSubmit={(data) => {
+                if (isEditMode && initialData?.id) {
+                  updateActivityMutation.mutate({ ...data, id: initialData.id });
+                } else {
+                  createActivityMutation.mutate(data);
+                }
+              }}
+              isLoading={isEditMode ? updateActivityMutation.isPending : createActivityMutation.isPending}
+              onCancel={closeModal}
+            />
+          </div>
         </DialogContent>
       </Dialog>
     </ActivityModalContext.Provider>

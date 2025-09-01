@@ -86,6 +86,8 @@ CREATE TABLE activities (
     project VARCHAR(255),
     -- campo mantido para compatibilidade temporária
     requester VARCHAR(255),
+    observations TEXT,
+    -- observações da atividade
     status activity_status NOT NULL DEFAULT 'next',
     total_time INTEGER DEFAULT 0,
     -- em segundos

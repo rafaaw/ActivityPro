@@ -288,10 +288,18 @@ export class DatabaseStorage implements IStorage {
     const activitiesWithDetails = await Promise.all(
       results.map(async (result) => {
         const subtasks = await this.getSubtasksByActivity(result.activities.id);
+        let activeSession = null;
+
+        // Include active session for in-progress activities
+        if (result.activities.status === 'in_progress') {
+          activeSession = await this.getActiveSession(result.activities.id);
+        }
+
         return {
           ...result.activities,
           collaborator: result.users!,
           subtasks,
+          activeSession,
         };
       })
     );
@@ -310,10 +318,18 @@ export class DatabaseStorage implements IStorage {
     const activitiesWithDetails = await Promise.all(
       results.map(async (result) => {
         const subtasks = await this.getSubtasksByActivity(result.activities.id);
+        let activeSession = null;
+
+        // Include active session for in-progress activities
+        if (result.activities.status === 'in_progress') {
+          activeSession = await this.getActiveSession(result.activities.id);
+        }
+
         return {
           ...result.activities,
           collaborator: result.users!,
           subtasks,
+          activeSession,
         };
       })
     );
@@ -332,10 +348,18 @@ export class DatabaseStorage implements IStorage {
     const activitiesWithDetails = await Promise.all(
       results.map(async (result) => {
         const subtasks = await this.getSubtasksByActivity(result.activities.id);
+        let activeSession = null;
+
+        // Include active session for in-progress activities
+        if (result.activities.status === 'in_progress') {
+          activeSession = await this.getActiveSession(result.activities.id);
+        }
+
         return {
           ...result.activities,
           collaborator: result.users!,
           subtasks,
+          activeSession,
         };
       })
     );
@@ -369,11 +393,25 @@ export class DatabaseStorage implements IStorage {
   }
 
   async endActivitySession(sessionId: string, endTime: Date): Promise<ActivitySession> {
+    // Get the session first to calculate duration correctly
+    const [currentSession] = await db
+      .select()
+      .from(activitySessions)
+      .where(eq(activitySessions.id, sessionId));
+
+    if (!currentSession) {
+      throw new Error('Session not found');
+    }
+
+    // Calculate duration in JavaScript to avoid timezone issues
+    const startTime = new Date(currentSession.startedAt);
+    const duration = Math.floor((endTime.getTime() - startTime.getTime()) / 1000);
+
     const [session] = await db
       .update(activitySessions)
       .set({
         endedAt: endTime,
-        duration: sql`EXTRACT(EPOCH FROM (${endTime} - started_at))::integer`,
+        duration: duration,
       })
       .where(eq(activitySessions.id, sessionId))
       .returning();

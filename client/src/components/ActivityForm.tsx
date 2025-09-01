@@ -79,6 +79,7 @@ export default function ActivityForm({
       plant: initialData?.plant || "",
       project: initialData?.project || "",
       requester: initialData?.requester || "",
+      observations: initialData?.observations || "",
       status: initialData?.status || "next",
       isRetroactive: initialData?.isRetroactive || false,
       retroactiveStartDate: initialData?.retroactiveStartDate || "",
@@ -261,6 +262,27 @@ export default function ActivityForm({
                     {...field}
                     value={field.value || ""}
                     data-testid="input-activity-requester"
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="observations"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Observações</FormLabel>
+                <FormControl>
+                  <Textarea
+                    placeholder="Observações sobre a atividade (opcional)"
+                    {...field}
+                    value={field.value || ""}
+                    data-testid="textarea-activity-observations"
+                    rows={2}
+                    className="md:min-h-[60px]"
                   />
                 </FormControl>
                 <FormMessage />
