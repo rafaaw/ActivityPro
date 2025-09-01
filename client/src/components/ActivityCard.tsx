@@ -14,6 +14,7 @@ import {
   Square,
   CheckSquare,
   Eye,
+  Undo2,
 } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -188,6 +189,17 @@ export default function ActivityCard({ activity }: ActivityCardProps) {
   const handleEdit = () => {
     // Abrir modal de edição com os dados da atividade atual
     openModal(activity, true);
+  };
+
+  const handleRevertToPaused = () => {
+    updateActivityMutation.mutate({ status: 'paused' }, {
+      onSuccess: () => {
+        toast({
+          title: "Atividade revertida",
+          description: "A atividade foi revertida para status 'Pausada'",
+        });
+      }
+    });
   };
 
   const handleSubtaskToggle = (subtaskId: string, currentCompleted: boolean) => {
@@ -441,6 +453,19 @@ export default function ActivityCard({ activity }: ActivityCardProps) {
               <Copy className="w-3 h-3" />
             </Button>
 
+            {activity.status === 'completed' && (
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={handleRevertToPaused}
+                className="text-muted-foreground hover:text-foreground p-1"
+                data-testid="button-revert-to-paused"
+                title="Reverter para Pausada"
+              >
+                <Undo2 className="w-3 h-3" />
+              </Button>
+            )}
+
             {canAdjustTime && (
               <Button
                 size="sm"
@@ -489,6 +514,8 @@ export default function ActivityCard({ activity }: ActivityCardProps) {
         isOpen={showCancellationDialog}
         onClose={() => setShowCancellationDialog(false)}
         activityId={activity.id}
+        activityTitle={activity.title}
+        onSuccess={handleCancellationSuccess}
       />
 
       {/* Time Adjustment Dialog */}
@@ -496,8 +523,6 @@ export default function ActivityCard({ activity }: ActivityCardProps) {
         isOpen={showTimeAdjustmentDialog}
         onClose={() => setShowTimeAdjustmentDialog(false)}
         activity={activity}
-        activityTitle={activity.title}
-        onSuccess={handleCancellationSuccess}
       />
     </Card>
   );

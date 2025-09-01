@@ -472,8 +472,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Access denied" });
       }
 
-      // Prevent editing completed/cancelled activities
-      if (activity.status === 'completed' || activity.status === 'cancelled') {
+      // Prevent editing completed/cancelled activities (except for reverting completed to paused)
+      const isRevertingToPaused = activity.status === 'completed' && req.body.status === 'paused';
+      if ((activity.status === 'completed' || activity.status === 'cancelled') && !isRevertingToPaused) {
         return res.status(400).json({ message: "Cannot edit completed or cancelled activities" });
       }
 
