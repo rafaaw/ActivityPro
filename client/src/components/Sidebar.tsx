@@ -1,5 +1,6 @@
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
+import { useWebSocket } from "@/hooks/useWebSocket";
 import { cn } from "@/lib/utils";
 import { useSidebar } from "@/components/ui/sidebar";
 import { useQueryClient } from "@tanstack/react-query";
@@ -30,6 +31,7 @@ const navigation = [
 
 export default function Sidebar() {
   const { user } = useAuth();
+  const { isConnected } = useWebSocket();
   const [location, navigate] = useLocation();
   const { state, openMobile, setOpenMobile, isMobile } = useSidebar();
   const queryClient = useQueryClient();
@@ -214,8 +216,15 @@ export default function Sidebar() {
         <div className={cn("border-t border-border space-y-3", isCollapsed ? "p-2" : "p-4")}>
           {!isCollapsed && (
             <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-              <div className="w-2 h-2 bg-success rounded-full animate-pulse"></div>
-              <span data-testid="text-online-status">Online - Ativo</span>
+              <div className={cn(
+                "w-2 h-2 rounded-full",
+                isConnected 
+                  ? "bg-green-400 animate-pulse" 
+                  : "bg-red-400"
+              )}></div>
+              <span data-testid="text-online-status">
+                {isConnected ? "Conectado" : "Desconectado"}
+              </span>
             </div>
           )}
 

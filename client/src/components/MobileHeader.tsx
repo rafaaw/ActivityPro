@@ -28,7 +28,7 @@ export default function MobileHeader() {
           </div>
         </div>
 
-        <div className="flex items-center space-x-3">
+        <div className="flex items-center space-x-2">
           {/* Notifications */}
           <Button
             variant="ghost"

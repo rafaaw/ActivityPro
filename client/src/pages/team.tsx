@@ -1,5 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useWebSocket } from "@/hooks/useWebSocket";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -8,11 +9,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import Layout from "@/components/Layout";
 import { useAuth } from "@/hooks/useAuth";
-import { 
-  Users, 
-  Clock, 
-  Activity, 
-  TrendingUp, 
+import {
+  Users,
+  Clock,
+  Activity,
+  TrendingUp,
   Download,
   Calendar,
   User,
@@ -23,8 +24,10 @@ import type { User as UserType, Activity as ActivityType, UserWithSector } from 
 
 function TeamPage() {
   const { user } = useAuth();
+  const { isConnected } = useWebSocket(); // Enable WebSocket connection
   const [timeFilter, setTimeFilter] = useState("today");
-  
+  const [userFilter, setUserFilter] = useState("all");
+
   // Verificar se é gerente de setor ou admin
   if (!user || (user.role !== 'sector_chief' && user.role !== 'admin')) {
     return (
@@ -84,6 +87,39 @@ function TeamPage() {
     }
   };
 
+  // Filter activities based on selected user
+  const filteredActivities = useMemo(() => {
+    if (userFilter === "all") return teamActivities;
+    return teamActivities.filter(activity => activity.collaboratorId === userFilter);
+  }, [teamActivities, userFilter]);
+
+  // Filter team members for current activity display
+  const filteredMembers = useMemo(() => {
+    if (userFilter === "all") return teamMembers;
+    return teamMembers.filter(member => member.id === userFilter);
+  }, [teamMembers, userFilter]);
+
+  // Calculate filtered stats
+  const filteredStats = useMemo(() => {
+    const activities = filteredActivities;
+    const totalActivities = activities.length;
+    const completedActivities = activities.filter(a => a.status === 'completed').length;
+    const totalTime = activities.reduce((sum, a) => sum + (a.totalTime || 0), 0);
+    const activeMembers = filteredMembers.filter((member: any) =>
+      teamActivities.some(activity =>
+        activity.collaboratorId === member.id && activity.status === 'in_progress'
+      )
+    ).length;
+
+    return {
+      totalActivities,
+      completedActivities,
+      totalTime,
+      activeMembers,
+      teamSize: filteredMembers.length,
+    };
+  }, [filteredActivities, filteredMembers, teamActivities]);
+
   const formatTime = (seconds: number) => {
     const hours = Math.floor(seconds / 3600);
     const minutes = Math.floor((seconds % 3600) / 60);
@@ -91,7 +127,7 @@ function TeamPage() {
   };
 
   const getCurrentActivity = (memberId: string) => {
-    return teamActivities.find((activity) => 
+    return teamActivities.find((activity) =>
       activity.collaboratorId === memberId && activity.status === 'in_progress'
     );
   };
@@ -100,17 +136,33 @@ function TeamPage() {
     <Layout>
       <div className="flex-1 space-y-6 p-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h1 className="text-3xl font-bold">Equipe</h1>
             <p className="text-muted-foreground">
               Visão geral da sua equipe e atividades
             </p>
           </div>
-          
-          <div className="flex items-center space-x-4">
+
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">
+            {/* User Filter */}
+            <Select value={userFilter} onValueChange={setUserFilter}>
+              <SelectTrigger className="w-full sm:w-[200px]">
+                <SelectValue placeholder="Filtrar por usuário" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos os Usuários</SelectItem>
+                {teamMembers.map((member) => (
+                  <SelectItem key={member.id} value={member.id}>
+                    {member.firstName} {member.lastName}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            {/* Time Filter */}
             <Select value={timeFilter} onValueChange={setTimeFilter}>
-              <SelectTrigger className="w-[180px]">
+              <SelectTrigger className="w-full sm:w-[180px]">
                 <SelectValue placeholder="Período" />
               </SelectTrigger>
               <SelectContent>
@@ -119,7 +171,7 @@ function TeamPage() {
                 <SelectItem value="month">Este mês</SelectItem>
               </SelectContent>
             </Select>
-            
+
             <Button variant="outline" className="flex items-center space-x-2">
               <Download className="w-4 h-4" />
               <span>Exportar</span>
@@ -135,9 +187,9 @@ function TeamPage() {
               <Users className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{teamMembers.length}</div>
+              <div className="text-2xl font-bold">{filteredStats.teamSize}</div>
               <p className="text-xs text-muted-foreground">
-                {teamMembers.filter((m: UserType) => getCurrentActivity(m.id)).length} ativos agora
+                {filteredStats.activeMembers} ativos agora
               </p>
             </CardContent>
           </Card>
@@ -149,7 +201,7 @@ function TeamPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {teamStats ? formatTime(teamStats.totalTime) : '0h 0m'}
+                {formatTime(filteredStats.totalTime)}
               </div>
               <p className="text-xs text-muted-foreground">
                 No período selecionado
@@ -164,10 +216,10 @@ function TeamPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {teamStats ? teamStats.totalActivities : 0}
+                {filteredStats.totalActivities}
               </div>
               <p className="text-xs text-muted-foreground">
-                {teamStats ? teamStats.completedActivities : 0} concluídas
+                {filteredStats.completedActivities} concluídas
               </p>
             </CardContent>
           </Card>
@@ -179,8 +231,8 @@ function TeamPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {teamStats && teamStats.totalActivities > 0 
-                  ? Math.round((teamStats.completedActivities / teamStats.totalActivities) * 100)
+                {filteredStats.totalActivities > 0
+                  ? Math.round((filteredStats.completedActivities / filteredStats.totalActivities) * 100)
                   : 0}%
               </div>
               <p className="text-xs text-muted-foreground">
@@ -211,7 +263,7 @@ function TeamPage() {
                 {loadingTeam ? (
                   <div>Carregando equipe...</div>
                 ) : (
-                  teamMembers.map((member: UserType) => {
+                  filteredMembers.map((member: UserType) => {
                     const currentActivity = getCurrentActivity(member.id);
                     return (
                       <div key={member.id} className="flex items-center space-x-4 p-4 border rounded-lg">
@@ -223,13 +275,13 @@ function TeamPage() {
                         </Avatar>                        <div className="flex-1">
                           <div className="flex items-center space-x-2">
                             <h3 className="font-medium">
-                              {member.firstName && member.lastName 
+                              {member.firstName && member.lastName
                                 ? `${member.firstName} ${member.lastName}`
                                 : member.username}
                             </h3>
                             <Badge variant="outline">{member.role}</Badge>
                           </div>
-                          
+
                           {currentActivity ? (
                             <div className="mt-1">
                               <div className="flex items-center space-x-2 text-sm">
@@ -259,8 +311,8 @@ function TeamPage() {
                             </p>
                           )}
                         </div>
-                        
-                        <Badge 
+
+                        <Badge
                           variant={currentActivity ? "default" : "secondary"}
                           className={currentActivity ? "bg-green-500 hover:bg-green-600" : ""}
                         >
@@ -305,9 +357,9 @@ function TeamPage() {
               <CardContent>
                 {loadingActivities ? (
                   <div>Carregando atividades...</div>
-                ) : teamActivities.length > 0 ? (
+                ) : filteredActivities.length > 0 ? (
                   <div className="space-y-3">
-                    {teamActivities.map((activity: ActivityType & { collaborator: UserType }) => (
+                    {filteredActivities.map((activity: ActivityType & { collaborator: UserType }) => (
                       <div key={activity.id} className="flex items-center justify-between p-4 border rounded-lg">
                         <div className="flex-1">
                           <div className="flex items-center space-x-2">
@@ -316,12 +368,12 @@ function TeamPage() {
                               {getStatusText(activity.status)}
                             </Badge>
                           </div>
-                          
+
                           <div className="flex items-center space-x-4 text-sm text-muted-foreground mt-1">
                             <div className="flex items-center space-x-1">
                               <User className="w-3 h-3" />
                               <span>
-                                {activity.collaborator?.firstName 
+                                {activity.collaborator?.firstName
                                   ? `${activity.collaborator.firstName} ${activity.collaborator.lastName}`
                                   : activity.collaborator?.username}
                               </span>
@@ -338,7 +390,7 @@ function TeamPage() {
                             )}
                           </div>
                         </div>
-                        
+
                         <div className="text-right">
                           <div className="font-medium">{formatTime(activity.totalTime || 0)}</div>
                           <div className="text-xs text-muted-foreground">

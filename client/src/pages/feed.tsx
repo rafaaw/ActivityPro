@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { useQuery, useInfiniteQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
+import { useWebSocket } from "@/hooks/useWebSocket";
 import Layout from "@/components/Layout";
 import { ActivityFeed } from "@/components/ActivityFeed";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,6 +13,7 @@ import type { ActivityLogWithUser, ActivityWithDetails } from "@shared/schema";
 
 export default function Feed() {
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
+  const { isConnected } = useWebSocket(); // Enable WebSocket connection
   const [selectedUserId, setSelectedUserId] = useState<string>("all");
   const [selectedActivityId, setSelectedActivityId] = useState<string>("all");
 
@@ -24,7 +26,7 @@ export default function Feed() {
     isFetchingNextPage
   } = useInfiniteQuery({
     queryKey: ['/api/activity-logs'],
-    queryFn: ({ pageParam = 1 }) => 
+    queryFn: ({ pageParam = 1 }) =>
       fetch(`/api/activity-logs?page=${pageParam}&limit=20&days=7`)
         .then(res => res.json()),
     enabled: isAuthenticated,
@@ -134,17 +136,26 @@ export default function Feed() {
               {getPageDescription()}
             </p>
           </div>
-          
+
           <div className="flex items-center space-x-2">
             <Badge variant="outline" className="flex items-center">
               <Calendar className="h-3 w-3 mr-1" />
               Últimos 7 dias
             </Badge>
-            <Badge variant="outline" className="flex items-center">
-              <Clock className="h-3 w-3 mr-1" />
-              Atualiza a cada 30s
+            <Badge variant={isConnected ? "default" : "destructive"} className="flex items-center">
+              {isConnected ? (
+                <>
+                  <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse mr-1"></div>
+                  Tempo Real
+                </>
+              ) : (
+                <>
+                  <div className="w-2 h-2 bg-red-400 rounded-full mr-1"></div>
+                  Offline
+                </>
+              )}
             </Badge>
-            
+
             {logs.length > 0 && (
               <Badge className="flex items-center">
                 <Activity className="h-3 w-3 mr-1" />
@@ -220,16 +231,16 @@ export default function Feed() {
               </div>
             ) : (
               <div data-testid="activity-feed-container">
-                <ActivityFeed 
+                <ActivityFeed
                   logs={filteredLogs}
-                  showUserInfo={user?.role !== 'collaborator'} 
+                  showUserInfo={user?.role !== 'collaborator'}
                 />
-                
+
                 {/* Load More Button */}
                 {hasNextPage && (
                   <div className="flex justify-center mt-6">
-                    <Button 
-                      variant="outline" 
+                    <Button
+                      variant="outline"
                       onClick={() => fetchNextPage()}
                       disabled={isFetchingNextPage}
                       data-testid="button-load-more"
@@ -239,7 +250,7 @@ export default function Feed() {
                     </Button>
                   </div>
                 )}
-                
+
                 {logs.length === 0 && !logsLoading && (
                   <div className="text-center py-8 text-muted-foreground">
                     <Activity className="h-12 w-12 mx-auto mb-4 opacity-50" />

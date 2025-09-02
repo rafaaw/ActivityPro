@@ -19,7 +19,7 @@ interface LayoutProps {
 function LayoutContent({ children }: LayoutProps) {
   const { user } = useAuth();
   const { openModal } = useActivityModal();
-  const { toggleSidebar, state } = useSidebar();
+  const { state, toggleSidebar } = useSidebar();
   const isCollapsed = state === "collapsed";
   
   const { data: stats } = useQuery<DashboardStats>({
@@ -71,7 +71,7 @@ function LayoutContent({ children }: LayoutProps) {
             
             <div className="flex items-center space-x-4">
               {/* Quick Stats */}
-              <div className="hidden md:flex items-center space-x-6 text-sm">
+              <div className="hidden lg:flex items-center space-x-6 text-sm">
                 <div className="text-center">
                   <p className="font-semibold text-foreground" data-testid="text-header-today">
                     {stats ? `${stats.todayHours}h ${stats.todayMinutes}m` : '--'}

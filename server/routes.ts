@@ -595,6 +595,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         activity: fullActivity,
       });
 
+      // Also broadcast to all admins
+      broadcastToAdmins({
+        type: 'activity_updated',
+        activity: fullActivity,
+      });
+
       res.json(fullActivity);
     } catch (error) {
       console.error("Error updating activity:", error);
@@ -640,6 +646,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Broadcast to WebSocket clients
       broadcastToSector(updatedActivity!.collaborator.sectorId!, {
+        type: 'activity_updated',
+        activity: updatedActivity,
+      });
+
+      // Also broadcast to all admins
+      broadcastToAdmins({
         type: 'activity_updated',
         activity: updatedActivity,
       });
@@ -1995,6 +2007,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     clients.forEach((client) => {
       if (client.sectorId === sectorId && client.readyState === WebSocket.OPEN) {
         client.send(JSON.stringify(message));
+      }
+    });
+  }
+
+  // Broadcast to all admins
+  function broadcastToAdmins(message: any) {
+    clients.forEach(async (client) => {
+      if (client.userId && client.readyState === WebSocket.OPEN) {
+        try {
+          const user = await storage.getUser(client.userId);
+          if (user?.role === 'admin') {
+            client.send(JSON.stringify(message));
+          }
+        } catch (error) {
+          console.error('Error checking user role for broadcast:', error);
+        }
       }
     });
   }
