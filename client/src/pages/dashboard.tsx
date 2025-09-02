@@ -25,10 +25,13 @@ export default function Dashboard() {
 
   if (!user) return null;
 
-  const activeActivity = activities.find(a => a.status === 'in_progress');
-  const nextActivities = activities.filter(a => a.status === 'next');
-  const pausedActivities = activities.filter(a => a.status === 'paused');
-  const completedToday = activities.filter(a => {
+  // Filter activities to show only the current user's activities
+  const userActivities = activities.filter(a => a.collaboratorId === user.id);
+
+  const activeActivity = userActivities.find(a => a.status === 'in_progress');
+  const nextActivities = userActivities.filter(a => a.status === 'next');
+  const pausedActivities = userActivities.filter(a => a.status === 'paused');
+  const completedToday = userActivities.filter(a => {
     if (a.status !== 'completed' || !a.completedAt) return false;
     const today = new Date();
     const completedDate = new Date(a.completedAt);
@@ -59,7 +62,7 @@ export default function Dashboard() {
               </div>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardContent className="p-3 md:p-4">
               <div className="text-center">
@@ -74,7 +77,7 @@ export default function Dashboard() {
               </div>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardContent className="p-3 md:p-4">
               <div className="text-center">
@@ -85,12 +88,12 @@ export default function Dashboard() {
               </div>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardContent className="p-3 md:p-4">
               <div className="text-center">
                 <p className="text-lg md:text-2xl font-bold text-foreground" data-testid="text-total-activities">
-                  {activities.length}
+                  {userActivities.length}
                 </p>
                 <p className="text-xs md:text-sm text-muted-foreground">Total</p>
               </div>
@@ -200,7 +203,7 @@ export default function Dashboard() {
         {/* Quick Actions and Recent History */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
           <QuickActions />
-          <RecentHistory activities={activities} />
+          <RecentHistory activities={userActivities} />
         </div>
       </div>
     </Layout>
