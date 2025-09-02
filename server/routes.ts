@@ -1997,7 +1997,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           clients.set(message.userId, ws);
         }
       } catch (error) {
-        console.error('WebSocket message error:', error);
+        // console.error('WebSocket message error:', error);
       }
     });
 
@@ -2005,7 +2005,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (ws.userId) {
         clients.delete(ws.userId);
       }
-      console.log('WebSocket client disconnected');
+      //console.log('WebSocket client disconnected');
     });
   });
 
