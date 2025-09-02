@@ -678,19 +678,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const limit = Math.min(parseInt(req.query.limit as string) || 20, 50); // Max 50 per page
       const days = parseInt(req.query.days as string) || 7; // Default: last 7 days
       const offset = (page - 1) * limit;
+      const filterUserId = req.query.userId as string; // Parâmetro para filtrar por usuário
 
       let logs: any[];
       if (user.role === 'admin') {
-        logs = await storage.getActivityLogs(limit, offset, days);
-      } else if (user.role === 'sector_chief' && user.sectorId) {
-        logs = await storage.getActivityLogsBySector(user.sectorId, limit, offset, days);
-      } else {
-        // For collaborators, show logs from their sector
-        if (user.sectorId) {
-          logs = await storage.getActivityLogsBySector(user.sectorId, limit, offset, days);
+        // Admin pode ver todos os logs ou filtrar por usuário específico
+        if (filterUserId) {
+          logs = await storage.getActivityLogsByUser(filterUserId, limit, offset, days);
         } else {
-          logs = [];
+          logs = await storage.getActivityLogs(limit, offset, days);
         }
+      } else if (user.role === 'sector_chief' && user.sectorId) {
+        // Chefe de setor pode ver logs do setor ou filtrar por usuário específico do setor
+        if (filterUserId) {
+          logs = await storage.getActivityLogsByUser(filterUserId, limit, offset, days);
+        } else {
+          logs = await storage.getActivityLogsBySector(user.sectorId, limit, offset, days);
+        }
+      } else {
+        // Colaboradores só podem ver seus próprios logs
+        logs = await storage.getActivityLogsByUser(userId, limit, offset, days);
       }
 
       // Add cache headers for better performance

@@ -102,6 +102,7 @@ export interface IStorage {
   createActivityLog(log: InsertActivityLog): Promise<ActivityLog>;
   getActivityLogs(limit?: number): Promise<ActivityLogWithUser[]>;
   getActivityLogsBySector(sectorId: string, limit?: number): Promise<ActivityLogWithUser[]>;
+  getActivityLogsByUser(userId: string, limit?: number, offset?: number, days?: number): Promise<ActivityLogWithUser[]>;
 
   // Project operations
   createProject(project: InsertProject): Promise<Project>;
@@ -578,6 +579,28 @@ export class DatabaseStorage implements IStorage {
       .leftJoin(users, eq(activityLogs.userId, users.id))
       .where(and(
         eq(users.sectorId, sectorId),
+        gte(activityLogs.createdAt, dateFilter)
+      ))
+      .orderBy(desc(activityLogs.createdAt))
+      .limit(limit)
+      .offset(offset);
+
+    return results.map(result => ({
+      ...result.activity_logs,
+      user: result.users!,
+    }));
+  }
+
+  async getActivityLogsByUser(userId: string, limit: number = 50, offset: number = 0, days: number = 7): Promise<ActivityLogWithUser[]> {
+    const dateFilter = new Date();
+    dateFilter.setDate(dateFilter.getDate() - days);
+
+    const results = await db
+      .select()
+      .from(activityLogs)
+      .leftJoin(users, eq(activityLogs.userId, users.id))
+      .where(and(
+        eq(activityLogs.userId, userId),
         gte(activityLogs.createdAt, dateFilter)
       ))
       .orderBy(desc(activityLogs.createdAt))

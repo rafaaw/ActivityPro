@@ -25,11 +25,14 @@ export default function Feed() {
     hasNextPage,
     isFetchingNextPage
   } = useInfiniteQuery({
-    queryKey: ['/api/activity-logs'],
-    queryFn: ({ pageParam = 1 }) =>
-      fetch(`/api/activity-logs?page=${pageParam}&limit=20&days=7`)
-        .then(res => res.json()),
-    enabled: isAuthenticated,
+    queryKey: ['/api/activity-logs', user?.role, user?.id],
+    queryFn: ({ pageParam = 1 }) => {
+      // Para colaboradores, filtrar apenas seus próprios logs
+      const userParam = user?.role === 'collaborator' ? `&userId=${user.id}` : '';
+      return fetch(`/api/activity-logs?page=${pageParam}&limit=20&days=7${userParam}`)
+        .then(res => res.json());
+    },
+    enabled: isAuthenticated && !!user,
     refetchInterval: 30000, // Reduced from 5s to 30s for better performance
     getNextPageParam: (lastPage, allPages) => {
       return lastPage.pagination?.hasMore ? allPages.length + 1 : undefined;
@@ -59,8 +62,13 @@ export default function Feed() {
   });
 
   const { data: activities = [] } = useQuery<ActivityWithDetails[]>({
-    queryKey: ['/api/activities'],
-    enabled: isAuthenticated && user?.role === 'collaborator',
+    queryKey: ['/api/activities', user?.id],
+    queryFn: () => {
+      // Para colaboradores, buscar apenas suas atividades
+      const userParam = user?.role === 'collaborator' ? `?userId=${user.id}` : '';
+      return fetch(`/api/activities${userParam}`).then(res => res.json());
+    },
+    enabled: isAuthenticated && user?.role === 'collaborator' && !!user?.id,
   });
 
   const filteredLogs = useMemo(() => {
