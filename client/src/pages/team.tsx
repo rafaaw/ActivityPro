@@ -25,14 +25,14 @@ function TeamPage() {
   const { user } = useAuth();
   const [timeFilter, setTimeFilter] = useState("today");
   
-  // Verificar se é gerente de setor
-  if (!user || user.role !== 'sector_chief') {
+  // Verificar se é gerente de setor ou admin
+  if (!user || (user.role !== 'sector_chief' && user.role !== 'admin')) {
     return (
       <Layout>
         <div className="p-6 text-center">
           <h1 className="text-2xl font-bold text-destructive">Acesso Negado</h1>
           <p className="text-muted-foreground mt-2">
-            Esta página é apenas para gerentes de setor.
+            Esta página é apenas para gerentes de setor e administradores.
           </p>
         </div>
       </Layout>
@@ -40,21 +40,27 @@ function TeamPage() {
   }
 
   // Buscar usuários da equipe (mesmo setor)
-  const { data: teamMembers = [], isLoading: loadingTeam } = useQuery({
+  const { data: teamMembers = [], isLoading: loadingTeam } = useQuery<UserWithSector[]>({
     queryKey: ['/api/team/members'],
-    enabled: !!user?.sectorId,
+    enabled: !!user && (user.role === 'sector_chief' || user.role === 'admin'),
   });
 
   // Buscar atividades da equipe
-  const { data: teamActivities = [], isLoading: loadingActivities } = useQuery({
+  const { data: teamActivities = [], isLoading: loadingActivities } = useQuery<(ActivityType & { collaborator: UserType })[]>({
     queryKey: ['/api/team/activities', timeFilter],
-    enabled: !!user?.sectorId,
+    queryFn: () => fetch(`/api/team/activities?timeFilter=${timeFilter}`).then(res => res.json()),
+    enabled: !!user && (user.role === 'sector_chief' || user.role === 'admin'),
   });
 
   // Buscar estatísticas da equipe
-  const { data: teamStats, isLoading: loadingStats } = useQuery({
+  const { data: teamStats, isLoading: loadingStats } = useQuery<{
+    totalActivities: number;
+    completedActivities: number;
+    totalTime: number;
+  }>({
     queryKey: ['/api/team/stats', timeFilter],
-    enabled: !!user?.sectorId,
+    queryFn: () => fetch(`/api/team/stats?timeFilter=${timeFilter}`).then(res => res.json()),
+    enabled: !!user && (user.role === 'sector_chief' || user.role === 'admin'),
   });
 
   const getStatusColor = (status: string) => {
@@ -85,7 +91,7 @@ function TeamPage() {
   };
 
   const getCurrentActivity = (memberId: string) => {
-    return teamActivities.find((activity: ActivityType) => 
+    return teamActivities.find((activity) => 
       activity.collaboratorId === memberId && activity.status === 'in_progress'
     );
   };
@@ -209,14 +215,12 @@ function TeamPage() {
                     const currentActivity = getCurrentActivity(member.id);
                     return (
                       <div key={member.id} className="flex items-center space-x-4 p-4 border rounded-lg">
-                        <Avatar>
-                          <AvatarImage src={member.profileImageUrl} />
+                        <Avatar className="h-8 w-8">
+                          <AvatarImage src={member.profileImageUrl || undefined} />
                           <AvatarFallback>
-                            {member.firstName ? member.firstName[0] : member.username[0]}
+                            {member.firstName?.[0]}{member.lastName?.[0]}
                           </AvatarFallback>
-                        </Avatar>
-                        
-                        <div className="flex-1">
+                        </Avatar>                        <div className="flex-1">
                           <div className="flex items-center space-x-2">
                             <h3 className="font-medium">
                               {member.firstName && member.lastName 
@@ -245,7 +249,7 @@ function TeamPage() {
                                 )}
                                 <div className="flex items-center space-x-1">
                                   <Clock className="w-3 h-3" />
-                                  <span>{formatTime(currentActivity.totalTime)}</span>
+                                  <span>{formatTime(currentActivity.totalTime || 0)}</span>
                                 </div>
                               </div>
                             </div>
@@ -336,9 +340,9 @@ function TeamPage() {
                         </div>
                         
                         <div className="text-right">
-                          <div className="font-medium">{formatTime(activity.totalTime)}</div>
+                          <div className="font-medium">{formatTime(activity.totalTime || 0)}</div>
                           <div className="text-xs text-muted-foreground">
-                            {new Date(activity.createdAt).toLocaleDateString('pt-BR')}
+                            {activity.createdAt ? new Date(activity.createdAt).toLocaleDateString('pt-BR') : 'N/A'}
                           </div>
                         </div>
                       </div>

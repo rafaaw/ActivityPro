@@ -1007,15 +1007,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   const httpServer = createServer(app);
 
-  // Team management routes for sector chiefs
+  // Team management routes for sector chiefs and admins
   app.get('/api/team/members', isAuthenticated, async (req, res) => {
     try {
       const currentUser = await storage.getUser(req.user!.id);
-      if (!currentUser || currentUser.role !== 'sector_chief' || !currentUser.sectorId) {
+      if (!currentUser || (currentUser.role !== 'sector_chief' && currentUser.role !== 'admin')) {
         return res.status(403).json({ message: "Access denied" });
       }
 
-      const members = await storage.getUsersBySector(currentUser.sectorId);
+      let members;
+      if (currentUser.role === 'admin') {
+        // Admins can see all users
+        members = await storage.getAllUsers();
+      } else if (currentUser.sectorId) {
+        // Sector chiefs see their sector
+        members = await storage.getUsersBySector(currentUser.sectorId);
+      } else {
+        return res.status(400).json({ message: "No sector assigned" });
+      }
+
       res.json(members);
     } catch (error) {
       console.error("Error fetching team members:", error);
@@ -1026,11 +1036,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/team/activities', isAuthenticated, async (req, res) => {
     try {
       const currentUser = await storage.getUser(req.user!.id);
-      if (!currentUser || currentUser.role !== 'sector_chief' || !currentUser.sectorId) {
+      if (!currentUser || (currentUser.role !== 'sector_chief' && currentUser.role !== 'admin')) {
         return res.status(403).json({ message: "Access denied" });
       }
 
-      const activities = await storage.getActivitiesBySector(currentUser.sectorId);
+      let activities;
+      if (currentUser.role === 'admin') {
+        // Admins can see all activities
+        activities = await storage.getAllActivities();
+      } else if (currentUser.sectorId) {
+        // Sector chiefs see their sector
+        activities = await storage.getActivitiesBySector(currentUser.sectorId);
+      } else {
+        return res.status(400).json({ message: "No sector assigned" });
+      }
+
+      // Apply time filter if provided
+      const timeFilter = req.query.timeFilter;
+      if (timeFilter && timeFilter !== 'all') {
+        const now = new Date();
+        let startDate: Date;
+
+        switch (timeFilter) {
+          case 'today':
+            startDate = new Date(now);
+            startDate.setHours(0, 0, 0, 0);
+            break;
+          case 'week':
+            startDate = new Date(now);
+            startDate.setDate(now.getDate() - 7);
+            break;
+          case 'month':
+            startDate = new Date(now);
+            startDate.setMonth(now.getMonth() - 1);
+            break;
+          default:
+            startDate = new Date(0); // No filter
+        }
+
+        activities = activities.filter((activity: any) => {
+          const activityDate = new Date(activity.createdAt);
+          return activityDate >= startDate;
+        });
+      }
+
       res.json(activities);
     } catch (error) {
       console.error("Error fetching team activities:", error);
@@ -1041,12 +1090,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/team/stats', isAuthenticated, async (req, res) => {
     try {
       const currentUser = await storage.getUser(req.user!.id);
-      if (!currentUser || currentUser.role !== 'sector_chief' || !currentUser.sectorId) {
+      if (!currentUser || (currentUser.role !== 'sector_chief' && currentUser.role !== 'admin')) {
         return res.status(403).json({ message: "Access denied" });
       }
 
-      // Get all activities from the sector
-      const activities = await storage.getActivitiesBySector(currentUser.sectorId);
+      let activities;
+      if (currentUser.role === 'admin') {
+        // Admins can see all activities
+        activities = await storage.getAllActivities();
+      } else if (currentUser.sectorId) {
+        // Sector chiefs see their sector
+        activities = await storage.getActivitiesBySector(currentUser.sectorId);
+      } else {
+        return res.status(400).json({ message: "No sector assigned" });
+      }
+
+      // Apply time filter if provided
+      const timeFilter = req.query.timeFilter;
+      if (timeFilter && timeFilter !== 'all') {
+        const now = new Date();
+        let startDate: Date;
+
+        switch (timeFilter) {
+          case 'today':
+            startDate = new Date(now);
+            startDate.setHours(0, 0, 0, 0);
+            break;
+          case 'week':
+            startDate = new Date(now);
+            startDate.setDate(now.getDate() - 7);
+            break;
+          case 'month':
+            startDate = new Date(now);
+            startDate.setMonth(now.getMonth() - 1);
+            break;
+          default:
+            startDate = new Date(0); // No filter
+        }
+
+        activities = activities.filter((activity: any) => {
+          const activityDate = new Date(activity.createdAt);
+          return activityDate >= startDate;
+        });
+      }
 
       // Calculate stats
       const totalActivities = activities.length;
