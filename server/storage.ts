@@ -11,6 +11,7 @@ import {
   projectMembers,
   projectTemplates,
   templateActivities,
+  userSettings,
   type User,
   type UpsertUser,
   type Sector,
@@ -39,6 +40,8 @@ import {
   type InsertProjectTemplate,
   type TemplateActivity,
   type InsertTemplateActivity,
+  type UserSettings,
+  type InsertUserSettings,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, sql, gte, lte, or } from "drizzle-orm";
@@ -119,6 +122,10 @@ export interface IStorage {
   getUserWithSector(id: string): Promise<UserWithSector | undefined>;
   getActiveActivitiesBySector(sectorId: string): Promise<ActivityWithDetails[]>;
   getCompletedActivitiesForPeriod(collaboratorId: string, startDate: Date, endDate: Date): Promise<ActivityWithDetails[]>;
+
+  // User settings operations
+  getUserSettings(userId: string): Promise<UserSettings | null>;
+  updateUserSettings(userId: string, settings: Partial<InsertUserSettings>): Promise<UserSettings>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -774,6 +781,59 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error('Error getting DB structure:', error);
       throw error;
+    }
+  }
+
+  // User settings operations
+  async getUserSettings(userId: string): Promise<UserSettings | null> {
+    const [settings] = await db
+      .select()
+      .from(userSettings)
+      .where(eq(userSettings.userId, userId));
+
+    if (!settings) {
+      // Create default settings if they don't exist
+      const [newSettings] = await db
+        .insert(userSettings)
+        .values({
+          userId,
+          teamNotificationsEnabled: false,
+        })
+        .returning();
+      return newSettings;
+    }
+
+    return settings;
+  }
+
+  async updateUserSettings(userId: string, updates: Partial<InsertUserSettings>): Promise<UserSettings> {
+    // First check if settings exist
+    const existingSettings = await db
+      .select()
+      .from(userSettings)
+      .where(eq(userSettings.userId, userId));
+
+    if (existingSettings.length === 0) {
+      // Create new settings
+      const [newSettings] = await db
+        .insert(userSettings)
+        .values({
+          userId,
+          ...updates,
+        })
+        .returning();
+      return newSettings;
+    } else {
+      // Update existing settings
+      const [updatedSettings] = await db
+        .update(userSettings)
+        .set({
+          ...updates,
+          updatedAt: new Date(),
+        })
+        .where(eq(userSettings.userId, userId))
+        .returning();
+      return updatedSettings;
     }
   }
 }

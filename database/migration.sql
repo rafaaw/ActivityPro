@@ -150,6 +150,15 @@ CREATE TABLE activity_logs (
     created_at TIMESTAMP DEFAULT NOW()
 );
 
+-- Tabela de configurações de usuário
+CREATE TABLE user_settings (
+    id VARCHAR PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id VARCHAR NOT NULL UNIQUE REFERENCES users(id),
+    team_notifications_enabled BOOLEAN DEFAULT false,
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
+);
+
 -- Índices para otimização de performance
 CREATE INDEX idx_plants_code ON plants(code);
 
@@ -178,6 +187,8 @@ CREATE INDEX idx_activity_logs_activity_id ON activity_logs(activity_id);
 CREATE INDEX idx_activity_logs_user_id ON activity_logs(user_id);
 
 CREATE INDEX idx_activity_logs_created_at ON activity_logs(created_at);
+
+CREATE INDEX idx_user_settings_user_id ON user_settings(user_id);
 
 -- Tabela de modelos de projetos
 CREATE TABLE project_templates (
@@ -308,6 +319,8 @@ COMMENT ON TABLE activity_sessions IS 'Sessões de trabalho para controle de tem
 
 COMMENT ON TABLE activity_logs IS 'Histórico de ações para feed de atividades';
 
+COMMENT ON TABLE user_settings IS 'Configurações personalizadas dos usuários';
+
 COMMENT ON TABLE project_templates IS 'Modelos de projetos para criação rápida de atividades';
 
 COMMENT ON TABLE projects IS 'Projetos do sistema para organização de atividades';
@@ -339,6 +352,10 @@ UPDATE
 CREATE TRIGGER update_projects_updated_at BEFORE
 UPDATE
     ON projects FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_user_settings_updated_at BEFORE
+UPDATE
+    ON user_settings FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 -- Fim da migração ActivityPro
 -- Versão: 1.0.0

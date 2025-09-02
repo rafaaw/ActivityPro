@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { useAuth } from "./useAuth";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { useToast } from "./use-toast";
+import type { UserSettings } from "@shared/schema";
 
 export function useWebSocket() {
   const { user } = useAuth();
@@ -10,6 +11,13 @@ export function useWebSocket() {
   const ws = useRef<WebSocket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Buscar configurações do usuário para notificações
+  const { data: userSettings } = useQuery<UserSettings>({
+    queryKey: ['/api/user/settings'],
+    enabled: !!user && (user.role === 'sector_chief' || user.role === 'admin'),
+    staleTime: 5 * 60 * 1000, // Cache por 5 minutos
+  });
 
   const invalidateQueries = useCallback(() => {
     queryClient.invalidateQueries({ queryKey: ["/api/activities"] });
@@ -52,8 +60,9 @@ export function useWebSocket() {
             console.log('Activity updated via WebSocket:', message.activity);
             invalidateQueries();
 
-            // Show notification for team supervision
-            if (user.role === 'admin' || user.role === 'sector_chief') {
+            // Show notification for team supervision only if enabled in settings
+            if ((user.role === 'admin' || user.role === 'sector_chief') &&
+              userSettings?.teamNotificationsEnabled) {
               const activity = message.activity;
               const collaboratorName = activity.collaborator ?
                 `${activity.collaborator.firstName || ''} ${activity.collaborator.lastName || ''}`.trim() ||

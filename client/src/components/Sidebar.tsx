@@ -218,8 +218,8 @@ export default function Sidebar() {
             <div className="flex items-center space-x-2 text-sm text-muted-foreground">
               <div className={cn(
                 "w-2 h-2 rounded-full",
-                isConnected 
-                  ? "bg-green-400 animate-pulse" 
+                isConnected
+                  ? "bg-green-400 animate-pulse"
                   : "bg-red-400"
               )}></div>
               <span data-testid="text-online-status">

@@ -21,7 +21,7 @@ function LayoutContent({ children }: LayoutProps) {
   const { openModal } = useActivityModal();
   const { state, toggleSidebar } = useSidebar();
   const isCollapsed = state === "collapsed";
-  
+
   const { data: stats } = useQuery<DashboardStats>({
     queryKey: ["/api/dashboard/stats"],
     enabled: !!user,
@@ -30,7 +30,7 @@ function LayoutContent({ children }: LayoutProps) {
   return (
     <>
       <Sidebar />
-      <div 
+      <div
         className={cn(
           "flex flex-col overflow-hidden transition-all duration-300 min-h-screen bg-background w-full",
           "md:pl-64 lg:pl-64", // Desktop padding
@@ -39,7 +39,7 @@ function LayoutContent({ children }: LayoutProps) {
       >
         {/* Mobile Header */}
         <MobileHeader />
-        
+
         {/* Desktop Header */}
         <header className="hidden md:block bg-card shadow-sm border-b border-border px-6 py-4">
           <div className="flex items-center justify-between">
@@ -58,7 +58,7 @@ function LayoutContent({ children }: LayoutProps) {
                   <X className="h-4 w-4" />
                 )}
               </Button>
-              
+
               <div>
                 <h2 className="text-2xl font-display font-semibold text-foreground" data-testid="text-header-title">
                   Dashboard
@@ -68,7 +68,7 @@ function LayoutContent({ children }: LayoutProps) {
                 </p>
               </div>
             </div>
-            
+
             <div className="flex items-center space-x-4">
               {/* Quick Stats */}
               <div className="hidden lg:flex items-center space-x-6 text-sm">
@@ -85,9 +85,9 @@ function LayoutContent({ children }: LayoutProps) {
                   <p className="text-muted-foreground">Esta semana</p>
                 </div>
               </div>
-              
+
               {/* Actions */}
-              <Button 
+              <Button
                 className="gradient-bg font-medium hover:shadow-lg transition-all duration-200 flex items-center space-x-2"
                 data-testid="button-new-activity-header"
                 onClick={() => openModal()}
@@ -95,17 +95,17 @@ function LayoutContent({ children }: LayoutProps) {
                 <Plus className="w-4 h-4" />
                 <span>Nova Atividade</span>
               </Button>
-              
+
               {/* Separator */}
               <div className="h-8 w-px bg-border"></div>
-              
+
               {/* User Profile */}
               <div className="flex items-center space-x-3">
                 <div className="w-10 h-10 bg-muted rounded-lg flex items-center justify-center hover:bg-muted/80 transition-colors cursor-pointer">
                   {user?.profileImageUrl ? (
-                    <img 
-                      src={user.profileImageUrl} 
-                      alt="Profile" 
+                    <img
+                      src={user.profileImageUrl}
+                      alt="Profile"
                       className="w-8 h-8 rounded-md object-cover"
                       data-testid="img-profile"
                     />
@@ -122,9 +122,9 @@ function LayoutContent({ children }: LayoutProps) {
                     {user?.firstName} {user?.lastName}
                   </p>
                   <p className="text-muted-foreground text-xs" data-testid="text-header-user-role">
-                    {user?.role === 'admin' ? 'Administração' : 
-                     user?.role === 'sector_chief' ? 'Chefe de Setor' :
-                     'Colaborador'}
+                    {user?.role === 'admin' ? 'Administração' :
+                      user?.role === 'sector_chief' ? 'Chefe de Setor' :
+                        'Colaborador'}
                   </p>
                 </div>
               </div>
@@ -137,10 +137,10 @@ function LayoutContent({ children }: LayoutProps) {
           {children}
         </main>
       </div>
-      
+
       {/* Mobile Bottom Navigation */}
       <MobileBottomNav />
-      
+
       {/* PWA Install Prompt */}
       <PWAInstallPrompt />
     </>

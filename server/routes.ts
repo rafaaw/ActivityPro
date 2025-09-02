@@ -2240,6 +2240,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // User settings routes
+  app.get('/api/user/settings', isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.user!.id;
+      const user = await storage.getUser(userId);
+
+      // Only sector chiefs and admins can access settings
+      if (!user || (user.role !== 'sector_chief' && user.role !== 'admin')) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+
+      const settings = await storage.getUserSettings(userId);
+      res.json(settings);
+    } catch (error) {
+      console.error("Error fetching user settings:", error);
+      res.status(500).json({ message: "Failed to fetch user settings" });
+    }
+  });
+
+  app.put('/api/user/settings', isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.user!.id;
+      const user = await storage.getUser(userId);
+
+      // Only sector chiefs and admins can modify settings
+      if (!user || (user.role !== 'sector_chief' && user.role !== 'admin')) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+
+      const { teamNotificationsEnabled } = req.body;
+
+      if (typeof teamNotificationsEnabled !== 'boolean') {
+        return res.status(400).json({ message: "Invalid settings data" });
+      }
+
+      const settings = await storage.updateUserSettings(userId, {
+        teamNotificationsEnabled,
+      });
+
+      res.json(settings);
+    } catch (error) {
+      console.error("Error updating user settings:", error);
+      res.status(500).json({ message: "Failed to update user settings" });
+    }
+  });
+
   // Make broadcastToSector available globally
   (global as any).broadcastToSector = broadcastToSector;
 

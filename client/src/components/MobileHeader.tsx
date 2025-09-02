@@ -20,7 +20,7 @@ export default function MobileHeader() {
           >
             <Menu className="h-5 w-5" />
           </Button>
-          
+
           <div>
             <h1 className="text-lg font-semibold text-foreground">
               ActivityPro
@@ -43,9 +43,9 @@ export default function MobileHeader() {
           {/* User Avatar */}
           <div className="w-8 h-8 bg-muted rounded-full flex items-center justify-center">
             {user?.profileImageUrl ? (
-              <img 
-                src={user.profileImageUrl} 
-                alt="Profile" 
+              <img
+                src={user.profileImageUrl}
+                alt="Profile"
                 className="w-8 h-8 rounded-full object-cover"
                 data-testid="img-mobile-profile"
               />

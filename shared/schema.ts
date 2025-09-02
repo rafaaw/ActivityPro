@@ -188,6 +188,15 @@ export const activityLogs = pgTable("activity_logs", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// User settings for configurations and preferences
+export const userSettings = pgTable("user_settings", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").references(() => users.id).notNull().unique(),
+  teamNotificationsEnabled: boolean("team_notifications_enabled").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Relations
 export const plantsRelations = relations(plants, ({ many }) => ({
   activities: many(activities),
@@ -252,6 +261,10 @@ export const usersRelations = relations(users, ({ one, many }) => ({
   createdTemplates: many(projectTemplates),
   timeAdjustmentLogs: many(timeAdjustmentLogs),
   activityLogs: many(activityLogs),
+  settings: one(userSettings, {
+    fields: [users.id],
+    references: [userSettings.userId],
+  }),
 }));
 
 export const activitiesRelations = relations(activities, ({ one, many }) => ({
@@ -309,6 +322,13 @@ export const activityLogsRelations = relations(activityLogs, ({ one }) => ({
   }),
 }));
 
+export const userSettingsRelations = relations(userSettings, ({ one }) => ({
+  user: one(users, {
+    fields: [userSettings.userId],
+    references: [users.id],
+  }),
+}));
+
 // Insert schemas
 export const insertPlantSchema = createInsertSchema(plants).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertSectorSchema = createInsertSchema(sectors).omit({ id: true, createdAt: true });
@@ -350,6 +370,7 @@ export const insertSubtaskSchema = createInsertSchema(subtasks).omit({ id: true,
 export const insertTimeAdjustmentLogSchema = createInsertSchema(timeAdjustmentLogs).omit({ id: true, createdAt: true });
 export const insertActivitySessionSchema = createInsertSchema(activitySessions).omit({ id: true, createdAt: true });
 export const insertActivityLogSchema = createInsertSchema(activityLogs).omit({ id: true, createdAt: true });
+export const insertUserSettingsSchema = createInsertSchema(userSettings).omit({ id: true, createdAt: true, updatedAt: true });
 
 // Types
 export type Plant = typeof plants.$inferSelect;
@@ -378,6 +399,8 @@ export type ActivitySession = typeof activitySessions.$inferSelect;
 export type InsertActivitySession = z.infer<typeof insertActivitySessionSchema>;
 export type ActivityLog = typeof activityLogs.$inferSelect;
 export type InsertActivityLog = z.infer<typeof insertActivityLogSchema>;
+export type UserSettings = typeof userSettings.$inferSelect;
+export type InsertUserSettings = z.infer<typeof insertUserSettingsSchema>;
 
 // Extended types with relations
 export type ActivityWithDetails = Activity & {
