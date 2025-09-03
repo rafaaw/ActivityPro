@@ -137,9 +137,9 @@ export default function Reports() {
   // Check if export buttons should be enabled (requires both start and end dates)
   const isExportEnabled = appliedFilters.startDate && appliedFilters.endDate;
 
-  const formatDuration = (milliseconds: number) => {
-    const hours = Math.floor(milliseconds / (1000 * 60 * 60));
-    const minutes = Math.floor((milliseconds % (1000 * 60 * 60)) / (1000 * 60));
+  const formatDuration = (seconds: number) => {
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
     return `${hours}h ${minutes}m`;
   };
 
