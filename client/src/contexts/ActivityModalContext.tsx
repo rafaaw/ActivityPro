@@ -128,15 +128,22 @@ export function ActivityModalProvider({ children }: ActivityModalProviderProps) 
 
       {/* Modal Global */}
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-hidden flex flex-col">
           <DialogHeader className="flex-shrink-0">
             <DialogTitle className="text-xl font-semibold gradient-text">
               {isEditMode ? 'Editar Atividade' : initialData ? 'Copiar Atividade' : 'Criar Nova Atividade'}
             </DialogTitle>
           </DialogHeader>
-          <div className="flex-1 overflow-y-auto">
+          <div className="flex-1 overflow-y-auto px-1">
             <ActivityForm
-              initialData={initialData}
+              initialData={initialData ? {
+                ...initialData,
+                isRetroactive: initialData.isRetroactive ?? false,
+                subtasks: initialData.subtasks?.map(s => ({
+                  title: s.title,
+                  completed: s.completed ?? false
+                }))
+              } : undefined}
               onSubmit={(data) => {
                 if (isEditMode && initialData?.id) {
                   updateActivityMutation.mutate({ ...data, id: initialData.id });
