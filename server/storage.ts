@@ -74,6 +74,7 @@ export interface IStorage {
 
   // Activity operations
   createActivity(activity: InsertActivity): Promise<Activity>;
+  createRetroactiveActivity(activity: InsertActivity, retroactiveStartDate: Date, retroactiveEndDate: Date): Promise<Activity>;
   getActivity(id: string): Promise<ActivityWithDetails | undefined>;
   getAllActivities(): Promise<ActivityWithDetails[]>;
   getActivitiesByCollaborator(collaboratorId: string): Promise<ActivityWithDetails[]>;
@@ -259,7 +260,22 @@ export class DatabaseStorage implements IStorage {
 
   // Activity operations
   async createActivity(activity: InsertActivity): Promise<Activity> {
-    const [newActivity] = await db.insert(activities).values(activity).returning();
+    const [newActivity] = await db.insert(activities).values(activity as any).returning();
+    return newActivity;
+  }
+
+  async createRetroactiveActivity(
+    activity: InsertActivity,
+    retroactiveStartDate: Date,
+    retroactiveEndDate: Date
+  ): Promise<Activity> {
+    // Para atividades retroativas, use SQL direto para definir as datas
+    const [newActivity] = await db.insert(activities).values({
+      ...activity,
+      createdAt: retroactiveStartDate,
+      startedAt: retroactiveStartDate,
+      completedAt: retroactiveEndDate,
+    } as any).returning();
     return newActivity;
   }
 

@@ -300,20 +300,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/activities', isAuthenticated, async (req, res) => {
     try {
       const userId = req.user!.id;
-      const user = await storage.getUser(userId);
 
-      if (!user) {
-        return res.status(404).json({ message: "User not found" });
-      }
-
-      let activities;
-      if (user.role === 'admin') {
-        activities = await storage.getAllActivities();
-      } else if (user.role === 'sector_chief' && user.sectorId) {
-        activities = await storage.getActivitiesBySector(user.sectorId);
-      } else {
-        activities = await storage.getActivitiesByCollaborator(userId);
-      }
+      // Esta rota é para "Minhas Atividades" - sempre retorna apenas as atividades do usuário logado
+      const activities = await storage.getActivitiesByCollaborator(userId);
 
       res.json(activities);
     } catch (error) {
@@ -375,6 +364,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Handle retroactive activities
+      // Declare variables outside the if block
+      let startDate: Date;
+      let endDate: Date;
+
       if (isRetroactive && retroactiveStartDate && retroactiveEndDate) {
         console.log('Processing retroactive activity:', {
           retroactiveStartDate,
@@ -385,8 +378,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
 
         // Parse dates
-        const startDate = new Date(retroactiveStartDate);
-        const endDate = new Date(retroactiveEndDate);
+        startDate = new Date(retroactiveStartDate);
+        endDate = new Date(retroactiveEndDate);
 
         console.log('Parsed dates:', {
           retroactiveStartDate,
@@ -431,6 +424,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         fullActivityData.totalTime = totalTimeInSeconds;
         fullActivityData.startedAt = startDate;
         fullActivityData.completedAt = endDate;
+        // Para atividades retroativas, a data de criação deve ser a data de início
+        fullActivityData.createdAt = startDate;
       }
 
       const validatedActivityData = insertActivitySchema.parse(fullActivityData);
@@ -445,7 +440,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      const activity = await storage.createActivity(validatedActivityData);
+      // Create activity with proper dates for retroactive activities
+      const activity = isRetroactive
+        ? await storage.createRetroactiveActivity(validatedActivityData, startDate!, endDate!)
+        : await storage.createActivity(validatedActivityData);
 
       // Create subtasks if provided
       if (req.body.subtasks && Array.isArray(req.body.subtasks)) {

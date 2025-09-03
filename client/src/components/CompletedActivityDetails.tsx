@@ -40,6 +40,27 @@ export default function CompletedActivityDetails({
     return hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
   };
 
+  const formatDateOnly = (dateString: string | Date | null) => {
+    if (!dateString) return 'N/A';
+
+    // Verificar se é atividade retroativa pelo formato da string original
+    if (typeof dateString === 'string' && dateString.includes('T00:00:00')) {
+      // É retroativa (tem 00:00:00 no banco), mostrar só a data
+      const dateParts = dateString.split('T')[0].split('-');
+      if (dateParts.length === 3) {
+        const year = parseInt(dateParts[0]);
+        const month = parseInt(dateParts[1]) - 1;
+        const day = parseInt(dateParts[2]);
+        const localDate = new Date(year, month, day);
+        return format(localDate, 'dd/MM/yyyy', { locale: ptBR });
+      }
+    }
+
+    // Para atividades normais, mostrar data e hora
+    const date = new Date(dateString);
+    return format(date, 'dd/MM/yyyy HH:mm', { locale: ptBR });
+  };
+
   const getPriorityColor = (priority: string) => {
     switch (priority) {
       case 'high': return 'destructive';
@@ -118,9 +139,7 @@ export default function CompletedActivityDetails({
                 <div className="flex items-center gap-2">
                   <Calendar className="w-4 h-4 text-muted-foreground" />
                   <span>
-                    Data de criação: {
-                      activity.createdAt ? format(new Date(activity.createdAt), 'dd/MM/yyyy HH:mm', { locale: ptBR }) : 'N/A'
-                    }
+                    Data de criação: {formatDateOnly(activity.createdAt)}
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
@@ -128,8 +147,8 @@ export default function CompletedActivityDetails({
                   <span>
                     {activity.status === 'completed' ? 'Concluída' : 'Cancelada'} em: {
                       activity.status === 'completed'
-                        ? (activity.completedAt ? format(new Date(activity.completedAt), 'dd/MM/yyyy HH:mm', { locale: ptBR }) : 'N/A')
-                        : (activity.cancelledAt ? format(new Date(activity.cancelledAt), 'dd/MM/yyyy HH:mm', { locale: ptBR }) : 'N/A')
+                        ? formatDateOnly(activity.completedAt)
+                        : formatDateOnly(activity.cancelledAt)
                     }
                   </span>
                 </div>
