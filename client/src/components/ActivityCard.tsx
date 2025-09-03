@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -22,7 +22,9 @@ import { isUnauthorizedError } from "@/lib/authUtils";
 import { cn } from "@/lib/utils";
 import type { ActivityWithDetails } from "@shared/schema";
 import { useActivityModal } from "@/contexts/ActivityModalContext";
+import { useAuth } from "@/hooks/useAuth";
 import CompletionDialog from "@/components/CompletionDialog";
+import StartActivityDialog from "@/components/StartActivityDialog";
 import CompletedActivityDetails from "@/components/CompletedActivityDetails";
 import CancellationDialog from "@/components/CancellationDialog";
 import TimeAdjustmentDialog from "@/components/TimeAdjustmentDialog";
@@ -35,10 +37,23 @@ export default function ActivityCard({ activity }: ActivityCardProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { openModal } = useActivityModal();
+  const { user } = useAuth();
   const [showCompletionDialog, setShowCompletionDialog] = useState(false);
   const [showDetailsDialog, setShowDetailsDialog] = useState(false);
   const [showCancellationDialog, setShowCancellationDialog] = useState(false);
   const [showTimeAdjustmentDialog, setShowTimeAdjustmentDialog] = useState(false);
+  const [showStartActivityDialog, setShowStartActivityDialog] = useState(false);
+
+  // Query para buscar atividades em progresso apenas do usuário atual
+  const { data: activities = [] } = useQuery<ActivityWithDetails[]>({
+    queryKey: ["/api/activities"],
+  });
+
+  // Encontrar atividade ativa apenas do usuário atual
+  const activeActivity = activities.find(a => 
+    a.status === 'in_progress' && 
+    a.collaboratorId === user?.id
+  );
 
 
   const updateActivityMutation = useMutation({
@@ -143,7 +158,44 @@ export default function ActivityCard({ activity }: ActivityCardProps) {
   const canAdjustTime = activity.status === 'paused' || activity.status === 'completed';
 
   const handleStart = () => {
-    updateActivityMutation.mutate({ status: 'in_progress' });
+    // Verificar se há uma atividade ativa
+    if (activeActivity && activeActivity.id !== activity.id) {
+      setShowStartActivityDialog(true);
+    } else {
+      // Não há atividade ativa, iniciar diretamente
+      updateActivityMutation.mutate({ status: 'in_progress' });
+    }
+  };
+
+  const handleConfirmStart = async () => {
+    try {
+      // Primeiro pausar a atividade ativa
+      if (activeActivity) {
+        await apiRequest("PATCH", `/api/activities/${activeActivity.id}`, { status: 'paused' });
+        
+        toast({
+          title: "Atividade pausada",
+          description: `"${activeActivity.title}" foi pausada automaticamente`,
+        });
+      }
+      
+      // Depois iniciar a nova atividade
+      updateActivityMutation.mutate({ status: 'in_progress' }, {
+        onSuccess: () => {
+          setShowStartActivityDialog(false);
+          toast({
+            title: "Atividade iniciada",
+            description: `"${activity.title}" foi iniciada com sucesso`,
+          });
+        }
+      });
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: "Falha ao pausar atividade atual",
+        variant: "destructive",
+      });
+    }
   };
 
   const handlePause = () => {
@@ -524,6 +576,18 @@ export default function ActivityCard({ activity }: ActivityCardProps) {
         onClose={() => setShowTimeAdjustmentDialog(false)}
         activity={activity}
       />
+
+      {/* Start Activity Dialog */}
+      {activeActivity && (
+        <StartActivityDialog
+          isOpen={showStartActivityDialog}
+          onClose={() => setShowStartActivityDialog(false)}
+          activeActivity={activeActivity}
+          newActivityTitle={activity.title}
+          onConfirm={handleConfirmStart}
+          isLoading={updateActivityMutation.isPending}
+        />
+      )}
     </Card>
   );
 }
