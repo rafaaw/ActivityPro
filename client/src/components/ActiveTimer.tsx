@@ -223,7 +223,7 @@ export default function ActiveTimer({ activity }: ActiveTimerProps) {
               <Button
                 variant="ghost"
                 size="sm"
-                className="bg-white/20 hover:bg-white/30 text-white text-xs md:text-sm"
+                className="bg-white/20 hover:bg-white/30 text-white text-xs md:text-sm hover:scale-110 transition-transform"
                 onClick={handlePause}
                 disabled={updateActivityMutation.isPending}
                 data-testid="button-pause-activity"
@@ -234,7 +234,7 @@ export default function ActiveTimer({ activity }: ActiveTimerProps) {
               <Button
                 variant="ghost"
                 size="sm"
-                className={`text-xs md:text-sm ${!areAllSubtasksCompleted()
+                className={`text-xs md:text-sm hover:scale-110 transition-transform ${!areAllSubtasksCompleted()
                   ? 'bg-gray-500/50 hover:bg-gray-500/60 text-white/50 cursor-not-allowed'
                   : 'bg-white/20 hover:bg-white/30 text-white'
                   }`}
@@ -256,7 +256,7 @@ export default function ActiveTimer({ activity }: ActiveTimerProps) {
             <div className="flex items-center justify-between mb-3">
               <button
                 onClick={() => setSubtasksExpanded(!subtasksExpanded)}
-                className="flex items-center space-x-2 text-white hover:text-white/80 transition-colors"
+                className="flex items-center space-x-2 text-white hover:text-white/80 hover:scale-105 transition-transform"
                 data-testid="button-toggle-subtasks"
               >
                 <h4 className="font-medium text-sm">

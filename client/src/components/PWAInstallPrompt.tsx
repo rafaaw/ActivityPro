@@ -22,9 +22,9 @@ export default function PWAInstallPrompt() {
   useEffect(() => {
     // Check if app is already installed (running in standalone mode)
     const checkStandalone = () => {
-      return window.matchMedia('(display-mode: standalone)').matches || 
-             (window.navigator as any).standalone === true ||
-             document.referrer.includes('android-app://');
+      return window.matchMedia('(display-mode: standalone)').matches ||
+        (window.navigator as any).standalone === true ||
+        document.referrer.includes('android-app://');
     };
 
     // Check if it's iOS
@@ -39,7 +39,7 @@ export default function PWAInstallPrompt() {
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
       setDeferredPrompt(e as BeforeInstallPromptEvent);
-      
+
       // Check if user has dismissed the prompt before
       const hasBeenDismissed = localStorage.getItem('pwa-install-dismissed');
       if (!hasBeenDismissed && !checkStandalone()) {
@@ -82,14 +82,14 @@ export default function PWAInstallPrompt() {
     try {
       await deferredPrompt.prompt();
       const choiceResult = await deferredPrompt.userChoice;
-      
+
       if (choiceResult.outcome === 'accepted') {
         console.log('User accepted the install prompt');
       } else {
         console.log('User dismissed the install prompt');
         localStorage.setItem('pwa-install-dismissed', 'true');
       }
-      
+
       setDeferredPrompt(null);
       setShowInstallPrompt(false);
     } catch (error) {
@@ -130,7 +130,7 @@ export default function PWAInstallPrompt() {
                   variant="ghost"
                   size="sm"
                   onClick={handleDismiss}
-                  className="h-8 w-8 p-0"
+                  className="h-8 w-8 p-0 hover:bg-transparent"
                   data-testid="button-dismiss-install"
                 >
                   <X className="h-4 w-4" />
@@ -142,16 +142,16 @@ export default function PWAInstallPrompt() {
                 Instale o app para ter acesso rápido e funcionar offline.
               </p>
               <div className="flex gap-2">
-                <Button 
+                <Button
                   onClick={handleInstallClick}
-                  size="sm" 
+                  size="sm"
                   className="flex-1"
                   data-testid="button-install-pwa"
                 >
                   Instalar
                 </Button>
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   onClick={handleDismiss}
                   size="sm"
                   data-testid="button-cancel-install"
@@ -185,7 +185,7 @@ export default function PWAInstallPrompt() {
                   variant="ghost"
                   size="sm"
                   onClick={handleDismiss}
-                  className="h-8 w-8 p-0"
+                  className="h-8 w-8 p-0 hover:bg-transparent"
                   data-testid="button-dismiss-install-ios"
                 >
                   <X className="h-4 w-4" />
@@ -201,8 +201,8 @@ export default function PWAInstallPrompt() {
                   <li>3. Toque em <strong>"Adicionar"</strong> no canto superior direito</li>
                 </ol>
               </div>
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 onClick={handleDismiss}
                 size="sm"
                 className="w-full mt-3"

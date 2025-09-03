@@ -28,7 +28,7 @@ interface HistoryFilters {
 export default function History() {
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const { toast } = useToast();
-  
+
   const [filters, setFilters] = useState<HistoryFilters>({
     collaborator: 'all',
     status: 'all',
@@ -101,7 +101,7 @@ export default function History() {
 
     if (filters.search) {
       const searchLower = filters.search.toLowerCase();
-      filtered = filtered.filter(activity => 
+      filtered = filtered.filter(activity =>
         activity.title.toLowerCase().includes(searchLower) ||
         activity.project?.toLowerCase().includes(searchLower) ||
         activity.requester?.toLowerCase().includes(searchLower)
@@ -163,9 +163,9 @@ export default function History() {
     });
   };
 
-  const hasActiveFilters = filters.search !== '' || filters.startDate !== '' || filters.endDate !== '' || 
-    (filters.collaborator !== 'all' && filters.collaborator !== '') || 
-    (filters.status !== 'all' && filters.status !== '') || 
+  const hasActiveFilters = filters.search !== '' || filters.startDate !== '' || filters.endDate !== '' ||
+    (filters.collaborator !== 'all' && filters.collaborator !== '') ||
+    (filters.status !== 'all' && filters.status !== '') ||
     (filters.type !== 'all' && filters.type !== '');
 
   return (
@@ -208,7 +208,7 @@ export default function History() {
               </div>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
@@ -220,7 +220,7 @@ export default function History() {
               </div>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
@@ -232,7 +232,7 @@ export default function History() {
               </div>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
@@ -257,7 +257,7 @@ export default function History() {
                     variant="ghost"
                     size="sm"
                     onClick={clearFilters}
-                    className="text-muted-foreground hover:text-foreground"
+                    className="text-muted-foreground hover:text-foreground hover:bg-transparent"
                   >
                     Limpar Filtros
                   </Button>
@@ -378,7 +378,7 @@ export default function History() {
             <Card>
               <CardContent className="py-8">
                 <p className="text-center text-muted-foreground" data-testid="text-no-history">
-                  {hasActiveFilters 
+                  {hasActiveFilters
                     ? "Nenhuma atividade encontrada com os filtros aplicados"
                     : "Nenhuma atividade concluída ou cancelada ainda"
                   }

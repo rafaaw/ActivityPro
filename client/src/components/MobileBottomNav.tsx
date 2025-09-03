@@ -12,21 +12,21 @@ const navItems = [
     testId: "nav-home"
   },
   {
-    href: "/activities", 
+    href: "/activities",
     icon: Activity,
     label: "Atividades",
     testId: "nav-activities"
   },
   {
     href: "/reports",
-    icon: BarChart3, 
+    icon: BarChart3,
     label: "Relatórios",
     testId: "nav-reports"
   },
   {
     href: "/history",
     icon: History,
-    label: "Histórico", 
+    label: "Histórico",
     testId: "nav-history"
   },
   {
@@ -59,14 +59,14 @@ export default function MobileBottomNav() {
           <Plus className="h-6 w-6" />
         </Button>
       </div>
-      
+
       {/* Bottom Navigation Bar */}
       <div className="fixed bottom-0 left-0 right-0 z-40 bg-card/95 backdrop-blur-md border-t border-border md:hidden">
         <div className="flex items-center justify-around px-2 py-1">
           {navItems.map((item, index) => {
             const Icon = item.icon;
             const isActive = location === item.href;
-            
+
             return (
               <button
                 key={item.href}
@@ -74,9 +74,9 @@ export default function MobileBottomNav() {
                 className={cn(
                   "flex flex-col items-center justify-center p-2 rounded-lg transition-all duration-200",
                   "min-w-0 flex-1 max-w-[4.5rem] active:scale-95 touch-manipulation",
-                  isActive 
-                    ? "text-primary bg-primary/10 scale-105" 
-                    : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                  isActive
+                    ? "text-primary bg-primary/10 scale-105"
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted/50 hover:scale-105"
                 )}
                 data-testid={item.testId}
               >

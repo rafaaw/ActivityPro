@@ -380,7 +380,7 @@ export default function ActivityCard({ activity }: ActivityCardProps) {
                 variant="outline"
                 onClick={handleStart}
                 disabled={updateActivityMutation.isPending}
-                className="text-success border-success hover:bg-success hover:text-white"
+                className="text-success border-success hover:bg-success hover:text-success-foreground hover:scale-110 transition-transform"
                 data-testid="button-start-activity"
               >
                 <Play className="w-3 h-3 mr-1" />
@@ -394,7 +394,7 @@ export default function ActivityCard({ activity }: ActivityCardProps) {
                 variant="outline"
                 onClick={handlePause}
                 disabled={updateActivityMutation.isPending}
-                className="text-orange-600 border-orange-600 hover:bg-orange-600 hover:text-white"
+                className="text-orange-600 border-orange-600 hover:bg-orange-600 hover:text-orange-50 hover:scale-110 transition-transform"
                 data-testid="button-pause-activity"
               >
                 <Pause className="w-3 h-3 mr-1" />
@@ -408,7 +408,7 @@ export default function ActivityCard({ activity }: ActivityCardProps) {
                 variant="outline"
                 onClick={handleComplete}
                 disabled={updateActivityMutation.isPending}
-                className="text-success border-success hover:bg-success hover:text-white"
+                className="text-success border-success hover:bg-success hover:text-success-foreground hover:scale-110 transition-transform"
                 data-testid="button-complete-activity"
               >
                 <CheckCircle className="w-3 h-3 mr-1" />
@@ -421,11 +421,11 @@ export default function ActivityCard({ activity }: ActivityCardProps) {
                 size="sm"
                 variant="outline"
                 onClick={handleViewDetails}
-                className="text-blue-600 border-blue-600 hover:bg-blue-600 hover:text-white"
+                className="text-blue-600 border-blue-600 hover:bg-blue-600 hover:text-blue-50 hover:scale-110 transition-transform"
                 data-testid="button-view-details"
               >
                 <Eye className="w-3 h-3 mr-1" />
-                Ver Detalhes
+                Detalhes
               </Button>
             )}
           </div>
@@ -436,7 +436,7 @@ export default function ActivityCard({ activity }: ActivityCardProps) {
                 size="sm"
                 variant="ghost"
                 onClick={handleEdit}
-                className="text-muted-foreground hover:text-foreground p-1"
+                className="text-muted-foreground hover:text-foreground hover:bg-transparent hover:scale-110 transition-transform p-1"
                 data-testid="button-edit-activity"
               >
                 <Edit className="w-3 h-3" />
@@ -447,7 +447,7 @@ export default function ActivityCard({ activity }: ActivityCardProps) {
               size="sm"
               variant="ghost"
               onClick={handleCopy}
-              className="text-muted-foreground hover:text-foreground p-1"
+              className="text-muted-foreground hover:text-foreground hover:bg-transparent hover:scale-110 transition-transform p-1"
               data-testid="button-duplicate-activity"
             >
               <Copy className="w-3 h-3" />
@@ -458,7 +458,7 @@ export default function ActivityCard({ activity }: ActivityCardProps) {
                 size="sm"
                 variant="ghost"
                 onClick={handleRevertToPaused}
-                className="text-muted-foreground hover:text-foreground p-1"
+                className="text-muted-foreground hover:text-foreground hover:bg-transparent hover:scale-110 transition-transform p-1"
                 data-testid="button-revert-to-paused"
                 title="Reverter para Pausada"
               >
@@ -471,7 +471,7 @@ export default function ActivityCard({ activity }: ActivityCardProps) {
                 size="sm"
                 variant="ghost"
                 onClick={() => setShowTimeAdjustmentDialog(true)}
-                className="text-muted-foreground hover:text-foreground p-1"
+                className="text-muted-foreground hover:text-foreground hover:bg-transparent hover:scale-110 transition-transform p-1"
                 data-testid="button-adjust-time"
               >
                 <Clock className="w-3 h-3" />
@@ -483,7 +483,7 @@ export default function ActivityCard({ activity }: ActivityCardProps) {
                 size="sm"
                 variant="ghost"
                 onClick={handleCancelActivity}
-                className="text-destructive hover:text-destructive p-1"
+                className="text-destructive hover:text-destructive hover:bg-transparent hover:scale-110 transition-transform p-1"
                 data-testid="button-cancel-activity"
               >
                 <X className="w-3 h-3" />

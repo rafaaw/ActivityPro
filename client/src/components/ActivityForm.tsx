@@ -344,7 +344,7 @@ export default function ActivityForm({
                             variant="ghost"
                             size="sm"
                             onClick={() => removeSubtask(index)}
-                            className="text-destructive hover:text-destructive p-0.5 h-6 w-6"
+                            className="text-destructive hover:text-destructive hover:bg-transparent p-0.5 h-6 w-6"
                             data-testid={`button-remove-subtask-${index}`}
                           >
                             <X className="w-3 h-3" />

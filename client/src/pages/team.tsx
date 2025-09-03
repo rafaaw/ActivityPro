@@ -340,7 +340,7 @@ function TeamPage() {
 
                         <Badge
                           variant={currentActivity ? "default" : "secondary"}
-                          className={currentActivity ? "bg-green-500 hover:bg-green-600" : ""}
+                          className={currentActivity ? "bg-green-500 hover:bg-green-600 hover:scale-105 transition-transform" : ""}
                         >
                           {currentActivity ? "Ativo" : "Inativo"}
                         </Badge>

@@ -18,9 +18,9 @@ export default function Landing() {
           <p className="text-xl text-white/80 mb-8 max-w-2xl mx-auto">
             Sistema completo de gestão de atividades e controle de tempo para equipes produtivas
           </p>
-          <Button 
-            size="lg" 
-            className="bg-white text-primary hover:bg-white/90 font-semibold px-8 py-3"
+          <Button
+            size="lg"
+            className="bg-white text-primary hover:bg-white/90 hover:scale-105 transition-transform font-semibold px-8 py-3"
             onClick={() => window.location.href = "/api/login"}
             data-testid="button-login"
           >

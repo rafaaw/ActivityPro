@@ -15,7 +15,7 @@ export default function MobileHeader() {
             variant="ghost"
             size="sm"
             onClick={() => setOpenMobile(!openMobile)}
-            className="h-8 w-8 p-0"
+            className="h-8 w-8 p-0 hover:bg-transparent"
             data-testid="button-mobile-menu"
           >
             <Menu className="h-5 w-5" />
@@ -33,7 +33,7 @@ export default function MobileHeader() {
           <Button
             variant="ghost"
             size="sm"
-            className="h-8 w-8 p-0 relative"
+            className="h-8 w-8 p-0 relative hover:bg-transparent"
             data-testid="button-notifications"
           >
             <Bell className="h-5 w-5" />

@@ -108,7 +108,7 @@ export default function Sidebar() {
                 key={item.name}
                 onClick={() => handleNavigation(item.href)}
                 className={cn(
-                  "flex items-center rounded-lg font-medium transition-colors w-full",
+                  "flex items-center rounded-lg font-medium transition-colors w-full hover:scale-105",
                   isCollapsed ? "justify-center px-2 py-3" : "space-x-3 px-3 py-2 text-left",
                   isActive
                     ? "bg-primary/10 text-primary"

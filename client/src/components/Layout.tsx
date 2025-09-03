@@ -49,7 +49,7 @@ function LayoutContent({ children }: LayoutProps) {
                 variant="ghost"
                 size="sm"
                 onClick={toggleSidebar}
-                className="h-8 w-8 p-0 hover:bg-muted"
+                className="h-8 w-8 p-0 hover:bg-muted hover:scale-110 transition-transform"
                 data-testid="button-toggle-sidebar"
               >
                 {state === "collapsed" ? (
@@ -101,7 +101,7 @@ function LayoutContent({ children }: LayoutProps) {
 
               {/* User Profile */}
               <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-muted rounded-lg flex items-center justify-center hover:bg-muted/80 transition-colors cursor-pointer">
+                <div className="w-10 h-10 bg-muted rounded-lg flex items-center justify-center hover:bg-muted/80 hover:scale-105 transition-transform cursor-pointer">
                   {user?.profileImageUrl ? (
                     <img
                       src={user.profileImageUrl}

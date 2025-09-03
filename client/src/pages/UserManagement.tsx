@@ -205,14 +205,14 @@ export default function UserManagement() {
 
   // Filtrar usuários
   const filteredUsers = (users as any[]).filter((user: any) => {
-    const matchesSearch = 
+    const matchesSearch =
       user.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (user.firstName && user.firstName.toLowerCase().includes(searchTerm.toLowerCase())) ||
       (user.lastName && user.lastName.toLowerCase().includes(searchTerm.toLowerCase())) ||
       (user.email && user.email.toLowerCase().includes(searchTerm.toLowerCase()));
-    
+
     const matchesRole = roleFilter === "all" || user.role === roleFilter;
-    
+
     return matchesSearch && matchesRole;
   });
 
@@ -222,7 +222,7 @@ export default function UserManagement() {
     const admins = (users as any[]).filter((u: any) => u.role === 'admin').length;
     const chiefs = (users as any[]).filter((u: any) => u.role === 'sector_chief').length;
     const collaborators = (users as any[]).filter((u: any) => u.role === 'collaborator').length;
-    
+
     return { total, active, admins, chiefs, collaborators };
   };
 
@@ -321,7 +321,7 @@ export default function UserManagement() {
                     data-testid="input-search"
                   />
                 </div>
-                
+
                 <div className="flex gap-2">
                   <Select value={roleFilter} onValueChange={setRoleFilter}>
                     <SelectTrigger className="w-[180px] h-11" data-testid="select-role-filter">
@@ -357,13 +357,13 @@ export default function UserManagement() {
                       Preencha os dados abaixo para criar uma nova conta no sistema ActivityPro.
                     </DialogDescription>
                   </DialogHeader>
-                  
+
                   <div className="border-t pt-6">
                     <Form {...form}>
                       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-5">
                         <div className="bg-muted/30 p-4 rounded-lg space-y-4">
                           <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Informações de Acesso</h3>
-                          
+
                           <FormField
                             control={form.control}
                             name="username"
@@ -371,11 +371,11 @@ export default function UserManagement() {
                               <FormItem>
                                 <FormLabel className="text-sm font-medium">Nome de usuário *</FormLabel>
                                 <FormControl>
-                                  <Input 
-                                    placeholder="Ex: joao.silva" 
+                                  <Input
+                                    placeholder="Ex: joao.silva"
                                     data-testid="input-username"
                                     className="h-11"
-                                    {...field} 
+                                    {...field}
                                   />
                                 </FormControl>
                                 <FormMessage />
@@ -390,12 +390,12 @@ export default function UserManagement() {
                               <FormItem>
                                 <FormLabel className="text-sm font-medium">Senha *</FormLabel>
                                 <FormControl>
-                                  <Input 
+                                  <Input
                                     type="password"
-                                    placeholder="Mínimo 6 caracteres" 
+                                    placeholder="Mínimo 6 caracteres"
                                     data-testid="input-password"
                                     className="h-11"
-                                    {...field} 
+                                    {...field}
                                   />
                                 </FormControl>
                                 <FormMessage />
@@ -406,7 +406,7 @@ export default function UserManagement() {
 
                         <div className="bg-muted/30 p-4 rounded-lg space-y-4">
                           <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Dados Pessoais</h3>
-                          
+
                           <div className="grid grid-cols-2 gap-4">
                             <FormField
                               control={form.control}
@@ -415,11 +415,11 @@ export default function UserManagement() {
                                 <FormItem>
                                   <FormLabel className="text-sm font-medium">Nome</FormLabel>
                                   <FormControl>
-                                    <Input 
-                                      placeholder="Ex: João" 
+                                    <Input
+                                      placeholder="Ex: João"
                                       data-testid="input-first-name"
                                       className="h-11"
-                                      {...field} 
+                                      {...field}
                                     />
                                   </FormControl>
                                   <FormMessage />
@@ -434,11 +434,11 @@ export default function UserManagement() {
                                 <FormItem>
                                   <FormLabel className="text-sm font-medium">Sobrenome</FormLabel>
                                   <FormControl>
-                                    <Input 
-                                      placeholder="Ex: Silva" 
+                                    <Input
+                                      placeholder="Ex: Silva"
                                       data-testid="input-last-name"
                                       className="h-11"
-                                      {...field} 
+                                      {...field}
                                     />
                                   </FormControl>
                                   <FormMessage />
@@ -454,12 +454,12 @@ export default function UserManagement() {
                               <FormItem>
                                 <FormLabel className="text-sm font-medium">E-mail</FormLabel>
                                 <FormControl>
-                                  <Input 
+                                  <Input
                                     type="email"
-                                    placeholder="Ex: joao.silva@empresa.com" 
+                                    placeholder="Ex: joao.silva@empresa.com"
                                     data-testid="input-email"
                                     className="h-11"
-                                    {...field} 
+                                    {...field}
                                   />
                                 </FormControl>
                                 <FormMessage />
@@ -523,17 +523,17 @@ export default function UserManagement() {
                         </div>
 
                         <div className="flex justify-end space-x-3 pt-6 border-t">
-                          <Button 
-                            type="button" 
-                            variant="outline" 
+                          <Button
+                            type="button"
+                            variant="outline"
                             onClick={() => setIsRegisterOpen(false)}
                             data-testid="button-cancel"
                             className="px-6"
                           >
                             Cancelar
                           </Button>
-                          <Button 
-                            type="submit" 
+                          <Button
+                            type="submit"
                             disabled={registerMutation.isPending}
                             data-testid="button-submit"
                             className="gradient-bg px-6 shadow-md"
@@ -561,13 +561,13 @@ export default function UserManagement() {
                       Atualize os dados do usuário {editingUser?.username}.
                     </DialogDescription>
                   </DialogHeader>
-                  
+
                   <div className="border-t pt-6">
                     <Form {...editForm}>
                       <form onSubmit={editForm.handleSubmit(handleEditSubmit)} className="space-y-5">
                         <div className="bg-muted/30 p-4 rounded-lg space-y-4">
                           <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Informações de Acesso</h3>
-                          
+
                           <FormField
                             control={editForm.control}
                             name="username"
@@ -575,11 +575,11 @@ export default function UserManagement() {
                               <FormItem>
                                 <FormLabel className="text-sm font-medium">Nome de usuário *</FormLabel>
                                 <FormControl>
-                                  <Input 
-                                    placeholder="Ex: joao.silva" 
+                                  <Input
+                                    placeholder="Ex: joao.silva"
                                     data-testid="input-edit-username"
                                     className="h-11"
-                                    {...field} 
+                                    {...field}
                                   />
                                 </FormControl>
                                 <FormMessage />
@@ -594,12 +594,12 @@ export default function UserManagement() {
                               <FormItem>
                                 <FormLabel className="text-sm font-medium">Nova Senha (deixe vazio para manter atual)</FormLabel>
                                 <FormControl>
-                                  <Input 
+                                  <Input
                                     type="password"
-                                    placeholder="Deixe vazio para não alterar" 
+                                    placeholder="Deixe vazio para não alterar"
                                     data-testid="input-edit-password"
                                     className="h-11"
-                                    {...field} 
+                                    {...field}
                                   />
                                 </FormControl>
                                 <FormMessage />
@@ -610,7 +610,7 @@ export default function UserManagement() {
 
                         <div className="bg-muted/30 p-4 rounded-lg space-y-4">
                           <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Dados Pessoais</h3>
-                          
+
                           <div className="grid grid-cols-2 gap-4">
                             <FormField
                               control={editForm.control}
@@ -619,11 +619,11 @@ export default function UserManagement() {
                                 <FormItem>
                                   <FormLabel className="text-sm font-medium">Nome</FormLabel>
                                   <FormControl>
-                                    <Input 
-                                      placeholder="Ex: João" 
+                                    <Input
+                                      placeholder="Ex: João"
                                       data-testid="input-edit-first-name"
                                       className="h-11"
-                                      {...field} 
+                                      {...field}
                                     />
                                   </FormControl>
                                   <FormMessage />
@@ -638,11 +638,11 @@ export default function UserManagement() {
                                 <FormItem>
                                   <FormLabel className="text-sm font-medium">Sobrenome</FormLabel>
                                   <FormControl>
-                                    <Input 
-                                      placeholder="Ex: Silva" 
+                                    <Input
+                                      placeholder="Ex: Silva"
                                       data-testid="input-edit-last-name"
                                       className="h-11"
-                                      {...field} 
+                                      {...field}
                                     />
                                   </FormControl>
                                   <FormMessage />
@@ -658,12 +658,12 @@ export default function UserManagement() {
                               <FormItem>
                                 <FormLabel className="text-sm font-medium">E-mail</FormLabel>
                                 <FormControl>
-                                  <Input 
+                                  <Input
                                     type="email"
-                                    placeholder="Ex: joao.silva@empresa.com" 
+                                    placeholder="Ex: joao.silva@empresa.com"
                                     data-testid="input-edit-email"
                                     className="h-11"
-                                    {...field} 
+                                    {...field}
                                   />
                                 </FormControl>
                                 <FormMessage />
@@ -751,17 +751,17 @@ export default function UserManagement() {
                         </div>
 
                         <div className="flex justify-end space-x-3 pt-6 border-t">
-                          <Button 
-                            type="button" 
-                            variant="outline" 
+                          <Button
+                            type="button"
+                            variant="outline"
                             onClick={() => setIsEditOpen(false)}
                             data-testid="button-edit-cancel"
                             className="px-6"
                           >
                             Cancelar
                           </Button>
-                          <Button 
-                            type="submit" 
+                          <Button
+                            type="submit"
                             disabled={editMutation.isPending}
                             data-testid="button-edit-submit"
                             className="gradient-bg px-6 shadow-md"
@@ -813,8 +813,8 @@ export default function UserManagement() {
                   {searchTerm || roleFilter !== "all" ? "Nenhum usuário encontrado" : "Nenhum usuário cadastrado"}
                 </h3>
                 <p className="text-muted-foreground">
-                  {searchTerm || roleFilter !== "all" 
-                    ? "Tente ajustar os filtros de busca" 
+                  {searchTerm || roleFilter !== "all"
+                    ? "Tente ajustar os filtros de busca"
                     : "Comece criando o primeiro usuário do sistema"
                   }
                 </p>
@@ -829,16 +829,16 @@ export default function UserManagement() {
                           {user.firstName?.[0]}{user.lastName?.[0] || user.username[0].toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
-                      
+
                       <div className="space-y-1">
                         <div className="flex items-center space-x-3">
                           <h3 className="font-semibold text-foreground" data-testid={`text-username-${user.id}`}>
-                            {user.firstName && user.lastName 
-                              ? `${user.firstName} ${user.lastName}` 
+                            {user.firstName && user.lastName
+                              ? `${user.firstName} ${user.lastName}`
                               : user.username
                             }
                           </h3>
-                          <Badge 
+                          <Badge
                             variant={getRoleBadgeVariant(user.role) as any}
                             data-testid={`badge-role-${user.id}`}
                             className="text-xs"
@@ -851,7 +851,7 @@ export default function UserManagement() {
                             </Badge>
                           )}
                         </div>
-                        
+
                         <div className="flex items-center space-x-4 text-sm text-muted-foreground">
                           {user.email && (
                             <div className="flex items-center space-x-1">
@@ -871,12 +871,12 @@ export default function UserManagement() {
                         </div>
                       </div>
                     </div>
-                    
+
                     <div className="flex items-center space-x-2">
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="h-8 w-8 p-0 hover:bg-blue-50 hover:text-blue-600"
+                        className="h-8 w-8 p-0 hover:bg-blue-50 hover:text-blue-600 hover:scale-110 transition-transform"
                         onClick={() => openEditModal(user)}
                         data-testid={`button-edit-${user.id}`}
                       >
@@ -885,7 +885,7 @@ export default function UserManagement() {
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="h-8 w-8 p-0 hover:bg-red-50 hover:text-red-600"
+                        className="h-8 w-8 p-0 hover:bg-red-50 hover:text-red-600 hover:scale-110 transition-transform"
                         data-testid={`button-delete-${user.id}`}
                       >
                         <Trash2 className="w-4 h-4" />

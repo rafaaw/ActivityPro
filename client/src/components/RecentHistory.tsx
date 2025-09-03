@@ -1,11 +1,11 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { 
-  History, 
-  CheckCircle, 
-  Pause, 
-  Play, 
-  X 
+import {
+  History,
+  CheckCircle,
+  Pause,
+  Play,
+  X
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -26,7 +26,7 @@ interface HistoryItem {
 export default function RecentHistory({ activities }: RecentHistoryProps) {
   // Generate recent history from activities
   const recentHistory: HistoryItem[] = [];
-  
+
   activities.forEach(activity => {
     if (activity.completedAt) {
       recentHistory.push({
@@ -37,7 +37,7 @@ export default function RecentHistory({ activities }: RecentHistoryProps) {
         duration: activity.totalTime,
       });
     }
-    
+
     if (activity.pausedAt) {
       recentHistory.push({
         id: `${activity.id}-paused`,
@@ -46,7 +46,7 @@ export default function RecentHistory({ activities }: RecentHistoryProps) {
         timestamp: new Date(activity.pausedAt),
       });
     }
-    
+
     if (activity.startedAt) {
       recentHistory.push({
         id: `${activity.id}-started`,
@@ -55,7 +55,7 @@ export default function RecentHistory({ activities }: RecentHistoryProps) {
         timestamp: new Date(activity.startedAt),
       });
     }
-    
+
     if (activity.cancelledAt) {
       recentHistory.push({
         id: `${activity.id}-cancelled`,
@@ -125,10 +125,10 @@ export default function RecentHistory({ activities }: RecentHistoryProps) {
           <div className="space-y-4 max-h-48 overflow-y-auto pr-2">
             {sortedHistory.map((item) => {
               const Icon = getHistoryIcon(item.type);
-              
+
               return (
-                <div 
-                  key={item.id} 
+                <div
+                  key={item.id}
                   className="flex items-start space-x-3 text-sm"
                   data-testid={`history-item-${item.id}`}
                 >
@@ -142,9 +142,9 @@ export default function RecentHistory({ activities }: RecentHistoryProps) {
                       </span>
                     </p>
                     <p className="text-muted-foreground text-xs" data-testid="text-history-timestamp">
-                      {formatDistanceToNow(item.timestamp, { 
-                        addSuffix: true, 
-                        locale: ptBR 
+                      {formatDistanceToNow(item.timestamp, {
+                        addSuffix: true,
+                        locale: ptBR
                       })}
                       {item.duration && ` • ${formatTime(item.duration)}`}
                     </p>
@@ -154,10 +154,10 @@ export default function RecentHistory({ activities }: RecentHistoryProps) {
             })}
           </div>
         )}
-        
-        <Button 
-          variant="ghost" 
-          className="w-full mt-4 text-primary hover:text-primary/80 font-medium text-sm"
+
+        <Button
+          variant="ghost"
+          className="w-full mt-4 text-primary hover:text-primary/80 hover:bg-transparent font-medium text-sm"
           data-testid="button-view-full-history"
         >
           Ver histórico completo →

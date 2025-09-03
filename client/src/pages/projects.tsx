@@ -391,7 +391,7 @@ export default function ProjectsPage() {
 
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="sm" data-testid={`button-project-menu-${project.id}`}>
+                      <Button variant="ghost" size="sm" className="hover:bg-transparent" data-testid={`button-project-menu-${project.id}`}>
                         <MoreVertical className="h-4 w-4" />
                       </Button>
                     </DropdownMenuTrigger>

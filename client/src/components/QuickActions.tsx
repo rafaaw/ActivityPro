@@ -1,11 +1,11 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { 
-  PlusCircle, 
-  CheckSquare, 
-  Clock, 
+import {
+  PlusCircle,
+  CheckSquare,
+  Clock,
   BarChart3,
-  Zap 
+  Zap
 } from "lucide-react";
 import { useActivityModal } from "@/contexts/ActivityModalContext";
 import QuickReportModal from "./QuickReportModal";
@@ -51,22 +51,22 @@ export default function QuickActions() {
 
   const handleAction = (action: string) => {
     console.log(`Quick action: ${action}`);
-    
+
     switch (action) {
       case "createSimpleActivity":
-        openModal({ 
+        openModal({
           type: "simple",
           status: "in_progress"
         });
         break;
       case "createChecklistActivity":
-        openModal({ 
+        openModal({
           type: "checklist",
           status: "in_progress"
         });
         break;
       case "createRetroactiveActivity":
-        openModal({ 
+        openModal({
           type: "simple",
           status: "next",
           isRetroactive: true
@@ -96,7 +96,7 @@ export default function QuickActions() {
               <Button
                 key={index}
                 variant="outline"
-                className="h-auto p-4 flex flex-col items-start space-y-2 hover:bg-muted transition-colors"
+                className="h-auto p-4 flex flex-col items-start space-y-2 hover:bg-muted hover:scale-105 transition-transform"
                 onClick={() => handleAction(action.action)}
                 data-testid={`button-quick-${action.action}`}
               >
@@ -114,10 +114,10 @@ export default function QuickActions() {
           })}
         </div>
       </CardContent>
-      
-      <QuickReportModal 
-        isOpen={isReportModalOpen} 
-        onClose={() => setIsReportModalOpen(false)} 
+
+      <QuickReportModal
+        isOpen={isReportModalOpen}
+        onClose={() => setIsReportModalOpen(false)}
       />
     </Card>
   );

@@ -213,32 +213,32 @@ export default function CompletionDialog({
 
             {(evidenceFile || evidenceUrl) ? (
               <div className={`flex items-center justify-between p-3 rounded-lg ${isUploading
-                  ? 'bg-blue-50 border border-blue-200'
-                  : evidenceUrl
-                    ? 'bg-green-50 border border-green-200'
-                    : 'bg-yellow-50 border border-yellow-200'
+                ? 'bg-blue-50 border border-blue-200'
+                : evidenceUrl
+                  ? 'bg-green-50 border border-green-200'
+                  : 'bg-yellow-50 border border-yellow-200'
                 }`}>
                 <div className="flex items-center space-x-2">
                   <FileText className={`w-4 h-4 ${isUploading
-                      ? 'text-blue-600'
-                      : evidenceUrl
-                        ? 'text-green-600'
-                        : 'text-yellow-600'
+                    ? 'text-blue-600'
+                    : evidenceUrl
+                      ? 'text-green-600'
+                      : 'text-yellow-600'
                     }`} />
                   <span className={`text-sm font-medium ${isUploading
-                      ? 'text-blue-700'
-                      : evidenceUrl
-                        ? 'text-green-700'
-                        : 'text-yellow-700'
+                    ? 'text-blue-700'
+                    : evidenceUrl
+                      ? 'text-green-700'
+                      : 'text-yellow-700'
                     }`}>
                     {evidenceFile?.name || 'Arquivo anexado'}
                   </span>
                   {evidenceFile && (
                     <span className={`text-xs ${isUploading
-                        ? 'text-blue-600'
-                        : evidenceUrl
-                          ? 'text-green-600'
-                          : 'text-yellow-600'
+                      ? 'text-blue-600'
+                      : evidenceUrl
+                        ? 'text-green-600'
+                        : 'text-yellow-600'
                       }`}>
                       ({(evidenceFile.size / 1024 / 1024).toFixed(1)} MB)
                     </span>
@@ -255,7 +255,7 @@ export default function CompletionDialog({
                   size="sm"
                   onClick={removeEvidence}
                   disabled={isUploading}
-                  className="text-red-600 hover:text-red-700 hover:bg-red-50 disabled:opacity-50"
+                  className="text-red-600 hover:text-red-700 hover:bg-red-50 hover:scale-110 transition-transform disabled:opacity-50"
                   data-testid="button-remove-evidence"
                 >
                   <X className="w-4 h-4" />
@@ -307,6 +307,7 @@ export default function CompletionDialog({
             variant="outline"
             onClick={handleClose}
             disabled={completeMutation.isPending}
+            className="hover:scale-110 transition-transform"
             data-testid="button-cancel-completion"
           >
             Cancelar
@@ -314,7 +315,7 @@ export default function CompletionDialog({
           <Button
             onClick={handleComplete}
             disabled={completeMutation.isPending}
-            className="bg-green-600 hover:bg-green-700 text-white"
+            className="bg-green-600 hover:bg-green-700 text-white hover:scale-110 transition-transform"
             data-testid="button-confirm-completion"
           >
             {completeMutation.isPending ? "Concluindo..." : "Concluir Atividade"}
