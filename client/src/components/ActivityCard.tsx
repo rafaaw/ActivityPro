@@ -50,8 +50,8 @@ export default function ActivityCard({ activity }: ActivityCardProps) {
   });
 
   // Encontrar atividade ativa apenas do usuário atual
-  const activeActivity = activities.find(a => 
-    a.status === 'in_progress' && 
+  const activeActivity = activities.find(a =>
+    a.status === 'in_progress' &&
     a.collaboratorId === user?.id
   );
 
@@ -172,13 +172,13 @@ export default function ActivityCard({ activity }: ActivityCardProps) {
       // Primeiro pausar a atividade ativa
       if (activeActivity) {
         await apiRequest("PATCH", `/api/activities/${activeActivity.id}`, { status: 'paused' });
-        
+
         toast({
           title: "Atividade pausada",
           description: `"${activeActivity.title}" foi pausada automaticamente`,
         });
       }
-      
+
       // Depois iniciar a nova atividade
       updateActivityMutation.mutate({ status: 'in_progress' }, {
         onSuccess: () => {
