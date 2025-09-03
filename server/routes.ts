@@ -354,9 +354,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const {
         isRetroactive,
         retroactiveStartDate,
-        retroactiveStartTime,
         retroactiveEndDate,
-        retroactiveEndTime,
+        retroactiveHours,
+        retroactiveMinutes,
+        totalTime,
         ...activityData
       } = req.body;
 
@@ -374,67 +375,62 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Handle retroactive activities
-      if (isRetroactive && retroactiveStartDate && retroactiveStartTime && retroactiveEndDate && retroactiveEndTime) {
+      if (isRetroactive && retroactiveStartDate && retroactiveEndDate) {
         console.log('Processing retroactive activity:', {
           retroactiveStartDate,
-          retroactiveStartTime,
           retroactiveEndDate,
-          retroactiveEndTime
+          retroactiveHours,
+          retroactiveMinutes,
+          totalTime
         });
 
-        // Parse dates with local timezone - ensure we handle timezone correctly
-        // Input format should be YYYY-MM-DD and HH:MM
-        const startDateTimeStr = `${retroactiveStartDate}T${retroactiveStartTime}:00`;
-        const endDateTimeStr = `${retroactiveEndDate}T${retroactiveEndTime}:00`;
-
-        const startDateTime = new Date(startDateTimeStr);
-        const endDateTime = new Date(endDateTimeStr);
+        // Parse dates
+        const startDate = new Date(retroactiveStartDate);
+        const endDate = new Date(retroactiveEndDate);
 
         console.log('Parsed dates:', {
-          startDateTimeStr,
-          endDateTimeStr,
-          startDateTime: startDateTime.toISOString(),
-          endDateTime: endDateTime.toISOString(),
+          retroactiveStartDate,
+          retroactiveEndDate,
+          startDate: startDate.toISOString(),
+          endDate: endDate.toISOString(),
           now: new Date().toISOString()
         });
 
         // Validate dates
-        if (isNaN(startDateTime.getTime()) || isNaN(endDateTime.getTime())) {
+        if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
           console.log('Invalid date format detected');
-          return res.status(400).json({ message: "Invalid date or time format" });
+          return res.status(400).json({ message: "Invalid date format" });
         }
 
-        if (startDateTime >= endDateTime) {
-          console.log('Start time is not before end time');
-          return res.status(400).json({ message: "End time must be after start time" });
+        if (startDate > endDate) {
+          console.log('Start date is after end date');
+          return res.status(400).json({ message: "End date must be after or equal to start date" });
         }
 
         // For retroactive activities, only prevent dates that are actually in the future
-        // Allow past dates, but prevent future dates
         const now = new Date();
-        if (endDateTime > now) {
-          console.log('End time is in the future:', endDateTime.toISOString(), '>', now.toISOString());
-          return res.status(400).json({ message: "Retroactive activities cannot have end time in the future" });
+        if (endDate > now) {
+          console.log('End date is in the future:', endDate.toISOString(), '>', now.toISOString());
+          return res.status(400).json({ message: "Retroactive activities cannot have end date in the future" });
         }
 
         // Add a reasonable limit for how far back retroactive activities can go
-        // For example, not more than 2 years ago to prevent data integrity issues
         const twoYearsAgo = new Date();
         twoYearsAgo.setFullYear(twoYearsAgo.getFullYear() - 2);
-        if (startDateTime < twoYearsAgo) {
-          console.log('Start time is too far in the past:', startDateTime.toISOString(), '<', twoYearsAgo.toISOString());
+        if (startDate < twoYearsAgo) {
+          console.log('Start date is too far in the past:', startDate.toISOString(), '<', twoYearsAgo.toISOString());
           return res.status(400).json({ message: "Retroactive activities cannot be more than 2 years old" });
         }
 
         console.log('Retroactive activity validation passed');
 
-        // Calculate total time in milliseconds
-        const totalTime = endDateTime.getTime() - startDateTime.getTime();
+        // Use totalTime from frontend (already calculated in seconds)
+        const totalTimeInSeconds = totalTime || 0;
 
         fullActivityData.status = 'completed';
-        fullActivityData.totalTime = totalTime;
-        fullActivityData.startedAt = startDateTime;
-        fullActivityData.completedAt = endDateTime;
+        fullActivityData.totalTime = totalTimeInSeconds;
+        fullActivityData.startedAt = startDate;
+        fullActivityData.completedAt = endDate;
       }
 
       const validatedActivityData = insertActivitySchema.parse(fullActivityData);

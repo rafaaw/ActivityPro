@@ -33,17 +33,17 @@ const formSchema = insertActivitySchema.extend({
   })).optional(),
   isRetroactive: z.boolean().optional(),
   retroactiveStartDate: z.string().optional(),
-  retroactiveStartTime: z.string().optional(),
   retroactiveEndDate: z.string().optional(),
-  retroactiveEndTime: z.string().optional(),
+  retroactiveHours: z.number().min(0, "Horas devem ser maior ou igual a 0").max(999, "Horas devem ser menor que 1000").optional(),
+  retroactiveMinutes: z.number().min(0, "Minutos devem ser maior ou igual a 0").max(59, "Minutos devem ser menor que 60").optional(),
 }).refine((data) => {
   if (data.isRetroactive) {
-    return !!(data.retroactiveStartDate && data.retroactiveStartTime &&
-      data.retroactiveEndDate && data.retroactiveEndTime);
+    return !!(data.retroactiveStartDate && data.retroactiveEndDate &&
+      (data.retroactiveHours !== undefined || data.retroactiveMinutes !== undefined));
   }
   return true;
 }, {
-  message: "Todos os campos de data e hora são obrigatórios para atividades retroativas",
+  message: "Data de início, data de fim e tempo trabalhado são obrigatórios para atividades retroativas",
   path: ["retroactiveStartDate"]
 });
 
@@ -83,9 +83,9 @@ export default function ActivityForm({
       status: initialData?.status || "next",
       isRetroactive: initialData?.isRetroactive || false,
       retroactiveStartDate: initialData?.retroactiveStartDate || "",
-      retroactiveStartTime: initialData?.retroactiveStartTime || "",
       retroactiveEndDate: initialData?.retroactiveEndDate || "",
-      retroactiveEndTime: initialData?.retroactiveEndTime || "",
+      retroactiveHours: initialData?.retroactiveHours || 0,
+      retroactiveMinutes: initialData?.retroactiveMinutes || 0,
       subtasks: subtasks,
     },
   });
@@ -129,6 +129,14 @@ export default function ActivityForm({
       plantId: data.plantId?.startsWith('__') ? '' : data.plantId,
       subtasks: watchedType === "checklist" ? subtasks : undefined,
     };
+
+    // Se for retroativa, calcular o total_time em segundos
+    if (data.isRetroactive && (data.retroactiveHours || data.retroactiveMinutes)) {
+      const hours = data.retroactiveHours || 0;
+      const minutes = data.retroactiveMinutes || 0;
+      const totalSeconds = (hours * 3600) + (minutes * 60);
+      cleanData.totalTime = totalSeconds;
+    }
 
     onSubmit(cleanData);
   };
@@ -365,7 +373,7 @@ export default function ActivityForm({
                   <FormLabel className="text-base">Atividade Retroativa</FormLabel>
                   <FormControl>
                     <p className="text-sm text-muted-foreground">
-                      Marque para inserir uma atividade já realizada com data e hora específicas
+                      Marque para inserir uma atividade já realizada com período específico e tempo total trabalhado
                     </p>
                   </FormControl>
                 </div>
@@ -385,57 +393,68 @@ export default function ActivityForm({
           {form.watch("isRetroactive") && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-muted/30 p-4 rounded-lg">
               <div className="space-y-2">
-                <FormLabel className="text-sm font-medium">Data e Hora de Início</FormLabel>
-                <div className="flex space-x-2">
-                  <FormField
-                    control={form.control}
-                    name="retroactiveStartDate"
-                    render={({ field }) => (
-                      <FormItem className="flex-1">
-                        <FormControl>
-                          <Input
-                            type="date"
-                            {...field}
-                            data-testid="input-retroactive-start-date"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="retroactiveStartTime"
-                    render={({ field }) => (
-                      <FormItem className="flex-1">
-                        <FormControl>
-                          <Input
-                            type="time"
-                            {...field}
-                            data-testid="input-retroactive-start-time"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
+                <FormLabel className="text-sm font-medium">Data de Início</FormLabel>
+                <FormField
+                  control={form.control}
+                  name="retroactiveStartDate"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormControl>
+                        <Input
+                          type="date"
+                          {...field}
+                          data-testid="input-retroactive-start-date"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               </div>
 
               <div className="space-y-2">
-                <FormLabel className="text-sm font-medium">Data e Hora de Fim</FormLabel>
+                <FormLabel className="text-sm font-medium">Data de Fim</FormLabel>
+                <FormField
+                  control={form.control}
+                  name="retroactiveEndDate"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormControl>
+                        <Input
+                          type="date"
+                          {...field}
+                          data-testid="input-retroactive-end-date"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <div className="space-y-2 md:col-span-2">
+                <FormLabel className="text-sm font-medium">Tempo Total Trabalhado</FormLabel>
                 <div className="flex space-x-2">
                   <FormField
                     control={form.control}
-                    name="retroactiveEndDate"
+                    name="retroactiveHours"
                     render={({ field }) => (
                       <FormItem className="flex-1">
                         <FormControl>
-                          <Input
-                            type="date"
-                            {...field}
-                            data-testid="input-retroactive-end-date"
-                          />
+                          <div className="relative">
+                            <Input
+                              type="number"
+                              min="0"
+                              max="999"
+                              placeholder="0"
+                              {...field}
+                              onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                              data-testid="input-retroactive-hours"
+                            />
+                            <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-sm text-muted-foreground">
+                              horas
+                            </span>
+                          </div>
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -443,15 +462,24 @@ export default function ActivityForm({
                   />
                   <FormField
                     control={form.control}
-                    name="retroactiveEndTime"
+                    name="retroactiveMinutes"
                     render={({ field }) => (
                       <FormItem className="flex-1">
                         <FormControl>
-                          <Input
-                            type="time"
-                            {...field}
-                            data-testid="input-retroactive-end-time"
-                          />
+                          <div className="relative">
+                            <Input
+                              type="number"
+                              min="0"
+                              max="59"
+                              placeholder="0"
+                              {...field}
+                              onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                              data-testid="input-retroactive-minutes"
+                            />
+                            <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-sm text-muted-foreground">
+                              min
+                            </span>
+                          </div>
                         </FormControl>
                         <FormMessage />
                       </FormItem>
