@@ -342,6 +342,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const {
         isRetroactive,
+        completeAllSubtasks,
         retroactiveStartDate,
         retroactiveEndDate,
         retroactiveHours,
@@ -448,9 +449,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Create subtasks if provided
       if (req.body.subtasks && Array.isArray(req.body.subtasks)) {
         for (const subtaskData of req.body.subtasks) {
+          // For retroactive activities with completeAllSubtasks option, mark all subtasks as completed
+          const completed = isRetroactive && completeAllSubtasks ? true : (subtaskData.completed || false);
+
           await storage.createSubtask({
             ...subtaskData,
             activityId: activity.id,
+            completed,
           });
         }
       }
