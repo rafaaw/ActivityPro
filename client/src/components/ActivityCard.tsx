@@ -252,7 +252,7 @@ export default function ActivityCard({ activity }: ActivityCardProps) {
   return (
     <Card
       className={cn(
-        "transition-all duration-200 hover:shadow-md",
+        "transition-all duration-300 hover:shadow-md hover:scale-102 hover:border-primary/10 cursor-pointer",
         getStatusColor(activity.status)
       )}
       data-testid={`card-activity-${activity.id}`}
