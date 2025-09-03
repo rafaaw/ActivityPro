@@ -44,7 +44,7 @@ import {
   type InsertUserSettings,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, desc, sql, gte, lte, or } from "drizzle-orm";
+import { eq, and, desc, asc, sql, gte, lte, or } from "drizzle-orm";
 
 export interface IStorage {
   // User operations (local auth)
@@ -467,7 +467,8 @@ export class DatabaseStorage implements IStorage {
     return await db
       .select()
       .from(subtasks)
-      .where(eq(subtasks.activityId, activityId));
+      .where(eq(subtasks.activityId, activityId))
+      .orderBy(asc(subtasks.createdAt));
   }
 
   async updateSubtask(id: string, data: { completed?: boolean }): Promise<Subtask> {
