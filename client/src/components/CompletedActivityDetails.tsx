@@ -15,7 +15,8 @@ import {
   Calendar,
   CheckSquare,
   MessageSquare,
-  X
+  X,
+  Building
 } from "lucide-react";
 import type { ActivityWithDetails } from "@shared/schema";
 import { format } from "date-fns";
@@ -107,10 +108,14 @@ export default function CompletedActivityDetails({
 
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div className="flex items-center gap-2">
+                  <Building className="w-4 h-4 text-muted-foreground" />
+                  <span>Planta: {activity.plant || activity.plantRef?.name || 'N/A'}</span>
+                </div>
+                <div className="flex items-center gap-2">
                   <Clock className="w-4 h-4 text-muted-foreground" />
                   <span>Tempo gasto: {formatTime(activity.totalTime || 0)}</span>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 col-span-2">
                   <Calendar className="w-4 h-4 text-muted-foreground" />
                   <span>
                     {activity.status === 'completed' ? 'Concluída' : 'Cancelada'} em: {
