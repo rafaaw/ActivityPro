@@ -157,7 +157,7 @@ export default function Sidebar() {
             <button
               onClick={() => handleNavigation('/team')}
               className={cn(
-                "flex items-center rounded-lg font-medium transition-colors w-full",
+                "flex items-center rounded-lg font-medium transition-colors w-full hover:scale-105",
                 isCollapsed ? "justify-center px-2 py-3" : "space-x-3 px-3 py-2 text-left",
                 location === '/team'
                   ? "bg-primary/10 text-primary"
@@ -176,7 +176,7 @@ export default function Sidebar() {
             <button
               onClick={() => handleNavigation('/users')}
               className={cn(
-                "flex items-center rounded-lg font-medium transition-colors w-full",
+                "flex items-center rounded-lg font-medium transition-colors w-full hover:scale-105",
                 isCollapsed ? "justify-center px-2 py-3" : "space-x-3 px-3 py-2 text-left",
                 location === '/users'
                   ? "bg-primary/10 text-primary"
