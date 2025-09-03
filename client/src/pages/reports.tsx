@@ -238,7 +238,7 @@ export default function Reports() {
                         <SelectItem value="__empty__" disabled>Nenhuma planta disponível</SelectItem>
                       ) : (
                         plants.map((plant) => (
-                          <SelectItem key={plant.id} value={plant.name}>{plant.name}</SelectItem>
+                          <SelectItem key={plant.id} value={plant.id}>{plant.name}</SelectItem>
                         ))
                       )}
                     </SelectContent>

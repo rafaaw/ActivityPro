@@ -1300,7 +1300,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let filteredActivities = activities.filter((activity: any) => {
         let matches = true;
 
-        if (plant && activity.plant !== plant) matches = false;
+        if (plant && activity.plantId !== plant) matches = false;
         if (project && activity.project !== project) matches = false;
         if (requester && activity.requester !== requester) matches = false;
         if (collaboratorId && activity.collaboratorId !== collaboratorId) matches = false;
