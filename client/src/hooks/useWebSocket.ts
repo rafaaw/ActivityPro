@@ -24,6 +24,7 @@ export function useWebSocket() {
     queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
     queryClient.invalidateQueries({ queryKey: ["/api/team/activities"] });
     queryClient.invalidateQueries({ queryKey: ["/api/team/stats"] });
+    queryClient.invalidateQueries({ queryKey: ["/api/team/members"] });
   }, [queryClient]);
 
   const connect = useCallback(() => {

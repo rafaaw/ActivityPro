@@ -367,22 +367,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Handle retroactive activities
       if (isRetroactive && retroactiveStartDate && retroactiveStartTime && retroactiveEndDate && retroactiveEndTime) {
-        // Parse dates with local timezone
-        const startDateTime = new Date(`${retroactiveStartDate}T${retroactiveStartTime}:00`);
-        const endDateTime = new Date(`${retroactiveEndDate}T${retroactiveEndTime}:00`);
+        console.log('Processing retroactive activity:', {
+          retroactiveStartDate,
+          retroactiveStartTime,
+          retroactiveEndDate,
+          retroactiveEndTime
+        });
+
+        // Parse dates with local timezone - ensure we handle timezone correctly
+        // Input format should be YYYY-MM-DD and HH:MM
+        const startDateTimeStr = `${retroactiveStartDate}T${retroactiveStartTime}:00`;
+        const endDateTimeStr = `${retroactiveEndDate}T${retroactiveEndTime}:00`;
+
+        const startDateTime = new Date(startDateTimeStr);
+        const endDateTime = new Date(endDateTimeStr);
+
+        console.log('Parsed dates:', {
+          startDateTimeStr,
+          endDateTimeStr,
+          startDateTime: startDateTime.toISOString(),
+          endDateTime: endDateTime.toISOString(),
+          now: new Date().toISOString()
+        });
 
         // Validate dates
         if (isNaN(startDateTime.getTime()) || isNaN(endDateTime.getTime())) {
+          console.log('Invalid date format detected');
           return res.status(400).json({ message: "Invalid date or time format" });
         }
 
         if (startDateTime >= endDateTime) {
+          console.log('Start time is not before end time');
           return res.status(400).json({ message: "End time must be after start time" });
         }
 
-        if (endDateTime > new Date()) {
-          return res.status(400).json({ message: "End time cannot be in the future" });
+        // For retroactive activities, only prevent dates that are actually in the future
+        // Allow past dates, but prevent future dates
+        const now = new Date();
+        if (endDateTime > now) {
+          console.log('End time is in the future:', endDateTime.toISOString(), '>', now.toISOString());
+          return res.status(400).json({ message: "Retroactive activities cannot have end time in the future" });
         }
+
+        // Add a reasonable limit for how far back retroactive activities can go
+        // For example, not more than 2 years ago to prevent data integrity issues
+        const twoYearsAgo = new Date();
+        twoYearsAgo.setFullYear(twoYearsAgo.getFullYear() - 2);
+        if (startDateTime < twoYearsAgo) {
+          console.log('Start time is too far in the past:', startDateTime.toISOString(), '<', twoYearsAgo.toISOString());
+          return res.status(400).json({ message: "Retroactive activities cannot be more than 2 years old" });
+        }
+
+        console.log('Retroactive activity validation passed');
 
         // Calculate total time in milliseconds
         const totalTime = endDateTime.getTime() - startDateTime.getTime();
@@ -1059,16 +1095,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Access denied" });
       }
 
+      console.log(`[DEBUG] Team activities request from user: ${currentUser.id} (${currentUser.firstName} ${currentUser.lastName}), role: ${currentUser.role}, sectorId: ${currentUser.sectorId}`);
+
       let activities;
       if (currentUser.role === 'admin') {
         // Admins can see all activities
         activities = await storage.getAllActivities();
+        console.log(`[DEBUG] Admin - Found ${activities.length} total activities`);
       } else if (currentUser.sectorId) {
         // Sector chiefs see their sector
         activities = await storage.getActivitiesBySector(currentUser.sectorId);
+        console.log(`[DEBUG] Sector chief - Found ${activities.length} activities for sector ${currentUser.sectorId}`);
       } else {
+        console.log(`[DEBUG] User has no sector assigned`);
         return res.status(400).json({ message: "No sector assigned" });
       }
+
+      // Log activities with in_progress status
+      const inProgressActivities = activities.filter((a: any) => a.status === 'in_progress');
+      console.log(`[DEBUG] Found ${inProgressActivities.length} in-progress activities:`, 
+        inProgressActivities.map((a: any) => ({
+          id: a.id,
+          title: a.title,
+          status: a.status,
+          collaboratorId: a.collaboratorId,
+          collaboratorName: a.collaborator ? `${a.collaborator.firstName} ${a.collaborator.lastName}` : 'Unknown'
+        }))
+      );
 
       // Apply time filter if provided
       const timeFilter = req.query.timeFilter;
@@ -1093,10 +1146,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
             startDate = new Date(0); // No filter
         }
 
+        const originalCount = activities.length;
         activities = activities.filter((activity: any) => {
+          // Always include in-progress activities regardless of creation date
+          if (activity.status === 'in_progress') {
+            return true;
+          }
+          
+          // For other activities, filter by creation date
           const activityDate = new Date(activity.createdAt);
           return activityDate >= startDate;
         });
+        console.log(`[DEBUG] Time filter ${timeFilter}: ${originalCount} -> ${activities.length} activities (keeping all in-progress)`);
       }
 
       res.json(activities);
@@ -1982,7 +2043,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const clients = new Map<string, WebSocketClient>();
 
   wss.on('connection', (ws: WebSocketClient, req) => {
-    console.log('WebSocket client connected');
+    //console.log('WebSocket client connected');
 
     ws.on('message', async (data) => {
       try {

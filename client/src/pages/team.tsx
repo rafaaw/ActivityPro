@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useWebSocket } from "@/hooks/useWebSocket";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -25,6 +25,7 @@ import type { User as UserType, Activity as ActivityType, UserWithSector } from 
 function TeamPage() {
   const { user } = useAuth();
   const { isConnected } = useWebSocket(); // Enable WebSocket connection
+  const queryClient = useQueryClient();
   const [timeFilter, setTimeFilter] = useState("today");
   const [userFilter, setUserFilter] = useState("all");
 
@@ -46,13 +47,22 @@ function TeamPage() {
   const { data: teamMembers = [], isLoading: loadingTeam } = useQuery<UserWithSector[]>({
     queryKey: ['/api/team/members'],
     enabled: !!user && (user.role === 'sector_chief' || user.role === 'admin'),
+    refetchInterval: isConnected ? 30000 : false, // Refetch every 30 seconds if WebSocket is connected
   });
 
   // Buscar atividades da equipe
-  const { data: teamActivities = [], isLoading: loadingActivities } = useQuery<(ActivityType & { collaborator: UserType })[]>({
+  const { data: teamActivities = [], isLoading: loadingActivities, refetch: refetchActivities } = useQuery<(ActivityType & { collaborator: UserType })[]>({
     queryKey: ['/api/team/activities', timeFilter],
-    queryFn: () => fetch(`/api/team/activities?timeFilter=${timeFilter}`).then(res => res.json()),
+    queryFn: () => fetch(`/api/team/activities?timeFilter=${timeFilter}`, {
+      headers: {
+        'Cache-Control': 'no-cache',
+        'Pragma': 'no-cache'
+      }
+    }).then(res => res.json()),
     enabled: !!user && (user.role === 'sector_chief' || user.role === 'admin'),
+    refetchInterval: isConnected ? 5000 : false, // Refetch every 5 seconds for real-time updates
+    refetchOnWindowFocus: true,
+    staleTime: 0, // Always consider data stale for real-time updates
   });
 
   // Buscar estatísticas da equipe
@@ -64,7 +74,23 @@ function TeamPage() {
     queryKey: ['/api/team/stats', timeFilter],
     queryFn: () => fetch(`/api/team/stats?timeFilter=${timeFilter}`).then(res => res.json()),
     enabled: !!user && (user.role === 'sector_chief' || user.role === 'admin'),
+    refetchInterval: isConnected ? 30000 : false,
   });
+
+  // Force refresh when WebSocket connects/disconnects
+  useEffect(() => {
+    if (isConnected) {
+      // Force a refresh when WebSocket connects
+      queryClient.invalidateQueries({ queryKey: ['/api/team/activities'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/team/stats'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/team/members'] });
+    }
+  }, [isConnected, queryClient]);
+
+  // Force refresh when timeFilter changes
+  useEffect(() => {
+    refetchActivities();
+  }, [timeFilter, refetchActivities]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -127,9 +153,19 @@ function TeamPage() {
   };
 
   const getCurrentActivity = (memberId: string) => {
-    return teamActivities.find((activity) =>
+    const currentActivity = teamActivities.find((activity) =>
       activity.collaboratorId === memberId && activity.status === 'in_progress'
     );
+    
+    // Debug logging
+    console.log(`[DEBUG] Getting current activity for member ${memberId}:`, {
+      allActivities: teamActivities.length,
+      inProgressActivities: teamActivities.filter(a => a.status === 'in_progress'),
+      currentActivity: currentActivity?.title || 'none',
+      allCollaboratorIds: teamActivities.map(a => ({ id: a.collaboratorId, status: a.status, title: a.title }))
+    });
+    
+    return currentActivity;
   };
 
   return (
