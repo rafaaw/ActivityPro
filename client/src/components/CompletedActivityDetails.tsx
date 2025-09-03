@@ -115,7 +115,15 @@ export default function CompletedActivityDetails({
                   <Clock className="w-4 h-4 text-muted-foreground" />
                   <span>Tempo gasto: {formatTime(activity.totalTime || 0)}</span>
                 </div>
-                <div className="flex items-center gap-2 col-span-2">
+                <div className="flex items-center gap-2">
+                  <Calendar className="w-4 h-4 text-muted-foreground" />
+                  <span>
+                    Data de criação: {
+                      activity.createdAt ? format(new Date(activity.createdAt), 'dd/MM/yyyy HH:mm', { locale: ptBR }) : 'N/A'
+                    }
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
                   <Calendar className="w-4 h-4 text-muted-foreground" />
                   <span>
                     {activity.status === 'completed' ? 'Concluída' : 'Cancelada'} em: {
