@@ -291,8 +291,8 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(activities)
       .leftJoin(users, eq(activities.collaboratorId, users.id))
-      .leftJoin(projects, eq(activities.project, projects.id))
-      .leftJoin(plants, eq(activities.plant, plants.id))
+      .leftJoin(projects, eq(activities.projectId, projects.id))
+      .leftJoin(plants, eq(activities.plantId, plants.id))
       .orderBy(desc(activities.createdAt));
 
     const activitiesWithDetails = await Promise.all(
@@ -324,8 +324,8 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(activities)
       .leftJoin(users, eq(activities.collaboratorId, users.id))
-      .leftJoin(projects, eq(activities.project, projects.id))
-      .leftJoin(plants, eq(activities.plant, plants.id))
+      .leftJoin(projects, eq(activities.projectId, projects.id))
+      .leftJoin(plants, eq(activities.plantId, plants.id))
       .where(eq(activities.collaboratorId, collaboratorId))
       .orderBy(desc(activities.createdAt));
 
@@ -358,8 +358,8 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(activities)
       .leftJoin(users, eq(activities.collaboratorId, users.id))
-      .leftJoin(projects, eq(activities.project, projects.id))
-      .leftJoin(plants, eq(activities.plant, plants.id))
+      .leftJoin(projects, eq(activities.projectId, projects.id))
+      .leftJoin(plants, eq(activities.plantId, plants.id))
       .where(eq(users.sectorId, sectorId))
       .orderBy(desc(activities.createdAt));
 

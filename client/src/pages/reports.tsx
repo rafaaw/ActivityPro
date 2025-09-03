@@ -449,7 +449,7 @@ export default function Reports() {
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-3 text-sm">
                         <div>
                           <span className="text-muted-foreground">Planta:</span>
-                          <div className="font-medium">{activity.plant}</div>
+                          <div className="font-medium">{activity.plant || activity.plantRef?.name || 'N/A'}</div>
                         </div>
                         {activity.project && (
                           <div>

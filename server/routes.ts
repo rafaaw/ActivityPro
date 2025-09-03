@@ -365,6 +365,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         collaboratorId: userId,
       };
 
+      // Populate plant name from plantId if not provided
+      if (fullActivityData.plantId && !fullActivityData.plant) {
+        const plant = await storage.getPlant(fullActivityData.plantId);
+        if (plant) {
+          fullActivityData.plant = plant.name;
+        }
+      }
+
       // Handle retroactive activities
       if (isRetroactive && retroactiveStartDate && retroactiveStartTime && retroactiveEndDate && retroactiveEndTime) {
         console.log('Processing retroactive activity:', {
@@ -1095,33 +1103,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Access denied" });
       }
 
-      console.log(`[DEBUG] Team activities request from user: ${currentUser.id} (${currentUser.firstName} ${currentUser.lastName}), role: ${currentUser.role}, sectorId: ${currentUser.sectorId}`);
-
       let activities;
       if (currentUser.role === 'admin') {
         // Admins can see all activities
         activities = await storage.getAllActivities();
-        console.log(`[DEBUG] Admin - Found ${activities.length} total activities`);
       } else if (currentUser.sectorId) {
         // Sector chiefs see their sector
         activities = await storage.getActivitiesBySector(currentUser.sectorId);
-        console.log(`[DEBUG] Sector chief - Found ${activities.length} activities for sector ${currentUser.sectorId}`);
       } else {
-        console.log(`[DEBUG] User has no sector assigned`);
         return res.status(400).json({ message: "No sector assigned" });
       }
-
-      // Log activities with in_progress status
-      const inProgressActivities = activities.filter((a: any) => a.status === 'in_progress');
-      console.log(`[DEBUG] Found ${inProgressActivities.length} in-progress activities:`, 
-        inProgressActivities.map((a: any) => ({
-          id: a.id,
-          title: a.title,
-          status: a.status,
-          collaboratorId: a.collaboratorId,
-          collaboratorName: a.collaborator ? `${a.collaborator.firstName} ${a.collaborator.lastName}` : 'Unknown'
-        }))
-      );
 
       // Apply time filter if provided
       const timeFilter = req.query.timeFilter;
@@ -1146,18 +1137,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
             startDate = new Date(0); // No filter
         }
 
-        const originalCount = activities.length;
         activities = activities.filter((activity: any) => {
           // Always include in-progress activities regardless of creation date
           if (activity.status === 'in_progress') {
             return true;
           }
-          
+
           // For other activities, filter by creation date
           const activityDate = new Date(activity.createdAt);
           return activityDate >= startDate;
         });
-        console.log(`[DEBUG] Time filter ${timeFilter}: ${originalCount} -> ${activities.length} activities (keeping all in-progress)`);
       }
 
       res.json(activities);

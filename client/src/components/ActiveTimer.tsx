@@ -183,7 +183,7 @@ export default function ActiveTimer({ activity }: ActiveTimerProps) {
                 {activity.title}
               </h3>
               <div className="flex items-center space-x-2 md:space-x-4 text-white/80 text-xs md:text-sm mt-1 overflow-hidden">
-                <span className="truncate" data-testid="text-activity-plant">{activity.plant}</span>
+                <span className="truncate" data-testid="text-activity-plant">{activity.plant || activity.plantRef?.name || 'N/A'}</span>
                 <span className="hidden md:inline">•</span>
                 <span className={cn("px-1.5 py-0.5 md:px-2 md:py-1 rounded text-xs font-medium", getPriorityColor(activity.priority))} data-testid="badge-activity-priority">
                   {getPriorityText(activity.priority)}

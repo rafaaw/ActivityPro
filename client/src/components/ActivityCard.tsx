@@ -221,7 +221,7 @@ export default function ActivityCard({ activity }: ActivityCardProps) {
       title: `${activity.title} (Cópia)`,
       type: activity.type,
       priority: activity.priority,
-      plant: activity.plant,
+      plant: activity.plant || activity.plantRef?.name,
       project: activity.project,
       requester: activity.requester,
       observations: activity.observations,
@@ -264,7 +264,7 @@ export default function ActivityCard({ activity }: ActivityCardProps) {
               {activity.title}
             </h4>
             <div className="flex items-center flex-wrap gap-2 text-xs text-muted-foreground">
-              <span data-testid="text-activity-plant">{activity.plant}</span>
+              <span data-testid="text-activity-plant">{activity.plant || activity.plantRef?.name || 'N/A'}</span>
               {activity.project && (
                 <>
                   <span>•</span>

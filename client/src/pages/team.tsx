@@ -20,7 +20,7 @@ import {
   MapPin,
   Briefcase
 } from "lucide-react";
-import type { User as UserType, Activity as ActivityType, UserWithSector } from "@shared/schema";
+import type { User as UserType, ActivityWithDetails, UserWithSector } from "@shared/schema";
 
 function TeamPage() {
   const { user } = useAuth();
@@ -51,7 +51,7 @@ function TeamPage() {
   });
 
   // Buscar atividades da equipe
-  const { data: teamActivities = [], isLoading: loadingActivities, refetch: refetchActivities } = useQuery<(ActivityType & { collaborator: UserType })[]>({
+  const { data: teamActivities = [], isLoading: loadingActivities, refetch: refetchActivities } = useQuery<ActivityWithDetails[]>({
     queryKey: ['/api/team/activities', timeFilter],
     queryFn: () => fetch(`/api/team/activities?timeFilter=${timeFilter}`, {
       headers: {
@@ -153,19 +153,9 @@ function TeamPage() {
   };
 
   const getCurrentActivity = (memberId: string) => {
-    const currentActivity = teamActivities.find((activity) =>
+    return teamActivities.find((activity) =>
       activity.collaboratorId === memberId && activity.status === 'in_progress'
     );
-    
-    // Debug logging
-    console.log(`[DEBUG] Getting current activity for member ${memberId}:`, {
-      allActivities: teamActivities.length,
-      inProgressActivities: teamActivities.filter(a => a.status === 'in_progress'),
-      currentActivity: currentActivity?.title || 'none',
-      allCollaboratorIds: teamActivities.map(a => ({ id: a.collaboratorId, status: a.status, title: a.title }))
-    });
-    
-    return currentActivity;
   };
 
   return (
@@ -327,7 +317,7 @@ function TeamPage() {
                               <div className="flex items-center space-x-4 text-xs text-muted-foreground mt-1">
                                 <div className="flex items-center space-x-1">
                                   <MapPin className="w-3 h-3" />
-                                  <span>{currentActivity.plant}</span>
+                                  <span>{currentActivity.plant || currentActivity.plantRef?.name || 'N/A'}</span>
                                 </div>
                                 {currentActivity.project && (
                                   <div className="flex items-center space-x-1">
@@ -395,7 +385,7 @@ function TeamPage() {
                   <div>Carregando atividades...</div>
                 ) : filteredActivities.length > 0 ? (
                   <div className="space-y-3">
-                    {filteredActivities.map((activity: ActivityType & { collaborator: UserType }) => (
+                    {filteredActivities.map((activity: ActivityWithDetails) => (
                       <div key={activity.id} className="flex items-center justify-between p-4 border rounded-lg">
                         <div className="flex-1">
                           <div className="flex items-center space-x-2">
@@ -416,7 +406,7 @@ function TeamPage() {
                             </div>
                             <div className="flex items-center space-x-1">
                               <MapPin className="w-3 h-3" />
-                              <span>{activity.plant}</span>
+                              <span>{activity.plant || activity.plantRef?.name || 'N/A'}</span>
                             </div>
                             {activity.project && (
                               <div className="flex items-center space-x-1">
