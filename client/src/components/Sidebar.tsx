@@ -74,7 +74,7 @@ export default function Sidebar() {
         {/* Logo */}
         <div className={cn(
           "gradient-bg transition-all duration-300 flex items-center w-full",
-          isCollapsed ? "h-16 justify-center" : "px-6 py-4"
+          isCollapsed ? "h-21 justify-center px-6 py-6" : "px-8 py-5"
         )}>
           <div className={cn(
             "flex items-center transition-all duration-300",
