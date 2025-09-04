@@ -2,7 +2,8 @@ import { useState, useEffect } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Pause, Play, CheckCircle, Square, CheckSquare, ChevronDown, ChevronUp } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Pause, Play, CheckCircle, Square, CheckSquare, ChevronDown, ChevronUp, Plus, X } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/authUtils";
@@ -20,6 +21,8 @@ export default function ActiveTimer({ activity }: ActiveTimerProps) {
   const [elapsedTime, setElapsedTime] = useState(activity.totalTime || 0);
   const [subtasksExpanded, setSubtasksExpanded] = useState(false);
   const [showCompletionDialog, setShowCompletionDialog] = useState(false);
+  const [showAddSubtask, setShowAddSubtask] = useState(false);
+  const [newSubtaskTitle, setNewSubtaskTitle] = useState("");
 
   // Update timer every second
   useEffect(() => {
@@ -100,6 +103,39 @@ export default function ActiveTimer({ activity }: ActiveTimerProps) {
     },
   });
 
+  const createSubtaskMutation = useMutation({
+    mutationFn: async ({ title }: { title: string }) => {
+      await apiRequest("POST", `/api/activities/${activity.id}/subtasks`, { title });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/activities"] });
+      setNewSubtaskTitle("");
+      setShowAddSubtask(false);
+      toast({
+        title: "Sucesso",
+        description: "Nova subtarefa adicionada",
+      });
+    },
+    onError: (error) => {
+      if (isUnauthorizedError(error)) {
+        toast({
+          title: "Não autorizado",
+          description: "Você precisa fazer login novamente",
+          variant: "destructive",
+        });
+        setTimeout(() => {
+          window.location.href = "/api/login";
+        }, 500);
+        return;
+      }
+      toast({
+        title: "Erro",
+        description: error.message || "Falha ao criar subtarefa",
+        variant: "destructive",
+      });
+    },
+  });
+
   const formatTime = (seconds: number) => {
     const hours = Math.floor(seconds / 3600);
     const minutes = Math.floor((seconds % 3600) / 60);
@@ -154,6 +190,24 @@ export default function ActiveTimer({ activity }: ActiveTimerProps) {
       subtaskId,
       completed: !currentCompleted
     });
+  };
+
+  const handleAddSubtask = () => {
+    if (!newSubtaskTitle.trim()) return;
+    createSubtaskMutation.mutate({ title: newSubtaskTitle.trim() });
+  };
+
+  const handleCancelAddSubtask = () => {
+    setNewSubtaskTitle("");
+    setShowAddSubtask(false);
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleAddSubtask();
+    } else if (e.key === 'Escape') {
+      handleCancelAddSubtask();
+    }
   };
 
   const getProgressPercentage = () => {
@@ -299,7 +353,7 @@ export default function ActiveTimer({ activity }: ActiveTimerProps) {
                   activity.subtasks.map((subtask) => (
                     <div
                       key={subtask.id}
-                      className="flex items-center space-x-3 text-sm group hover:bg-white/20 dark:hover:bg-white/15 p-3 rounded-lg transition-all duration-200 border border-white/20 dark:border-white/10 backdrop-blur-sm hover:border-white/30 dark:hover:border-white/20 hover:shadow-lg"
+                      className="flex items-center space-x-3 text-sm group hover:bg-white/25 dark:hover:bg-white/15 p-3 rounded-lg transition-all duration-200 border border-white/40 dark:border-white/10 backdrop-blur-sm hover:border-white/60 dark:hover:border-white/20 hover:shadow-lg"
                       data-testid={`subtask-${subtask.id}`}
                     >
                       <button
@@ -309,21 +363,21 @@ export default function ActiveTimer({ activity }: ActiveTimerProps) {
                         data-testid={`checkbox-subtask-${subtask.id}`}
                       >
                         {subtask.completed ? (
-                          <CheckSquare className="w-6 h-6 text-green-400 drop-shadow-lg" />
+                          <CheckSquare className="w-6 h-6 text-green-300 dark:text-green-400 drop-shadow-lg" />
                         ) : (
-                          <Square className="w-6 h-6 text-white/60 hover:text-white border-white/40 hover:border-white" />
+                          <Square className="w-6 h-6 text-white/80 dark:text-white/60 hover:text-white border-white/60 dark:border-white/40 hover:border-white" />
                         )}
                       </button>
                       <span className={cn(
                         "flex-1 transition-all duration-200 font-medium",
                         subtask.completed
-                          ? "line-through text-white/60"
-                          : "text-white group-hover:text-white drop-shadow-sm"
+                          ? "line-through text-white/70 dark:text-white/60"
+                          : "text-white/95 dark:text-white group-hover:text-white drop-shadow-sm"
                       )}>
                         {subtask.title}
                       </span>
                       {subtask.completed && (
-                        <div className="w-2 h-2 bg-green-400 rounded-full"></div>
+                        <div className="w-2 h-2 bg-green-300 dark:bg-green-400 rounded-full"></div>
                       )}
                     </div>
                   ))
@@ -335,6 +389,49 @@ export default function ActiveTimer({ activity }: ActiveTimerProps) {
                     </div>
                   </div>
                 )}
+
+                {/* Add New Subtask Section */}
+                {showAddSubtask ? (
+                  <div className="flex items-center space-x-2 p-3 rounded-lg border border-white/50 dark:border-white/20 bg-white/20 dark:bg-white/10 backdrop-blur-sm">
+                    <Input
+                      value={newSubtaskTitle}
+                      onChange={(e) => setNewSubtaskTitle(e.target.value)}
+                      onKeyDown={handleKeyPress}
+                      placeholder="Digite o título da nova subtarefa..."
+                      className="flex-1 bg-white/25 dark:bg-white/10 border-white/40 dark:border-white/20 text-white placeholder:text-white/70 dark:placeholder:text-white/60 focus:border-white/60 dark:focus:border-white/40"
+                      autoFocus
+                      disabled={createSubtaskMutation.isPending}
+                    />
+                    <Button
+                      size="sm"
+                      onClick={handleAddSubtask}
+                      disabled={!newSubtaskTitle.trim() || createSubtaskMutation.isPending}
+                      className="bg-green-600/40 hover:bg-green-600/50 text-white border-green-500/50 hover:scale-105 transition-all duration-200"
+                    >
+                      <CheckCircle className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={handleCancelAddSubtask}
+                      disabled={createSubtaskMutation.isPending}
+                      className="bg-red-600/40 hover:bg-red-600/50 text-white border-red-500/50 hover:scale-105 transition-all duration-200"
+                    >
+                      <X className="w-4 h-4" />
+                    </Button>
+                  </div>
+                ) : (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => setShowAddSubtask(true)}
+                    className="w-full mt-2 bg-white/15 dark:bg-white/5 hover:bg-white/25 dark:hover:bg-white/10 text-white border border-white/40 dark:border-white/10 hover:border-white/60 dark:hover:border-white/20 transition-all duration-200"
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Adicionar nova subtarefa
+                  </Button>
+                )}
+
                 {/* Warning when expanded and subtasks incomplete */}
                 {activity.subtasks && activity.subtasks.length > 0 && !areAllSubtasksCompleted() && (
                   <div className="text-yellow-300 text-xs text-center mt-3 p-2 bg-yellow-500/20 rounded border border-yellow-500/30">
