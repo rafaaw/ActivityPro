@@ -656,7 +656,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const activityId = req.params.id;
       const userId = req.user.id;
-      const { newTotalTime, reason, previousTotalTime } = req.body;
+      const { newTotalTime, reason, previousTotalTime, operation, adjustmentSeconds } = req.body;
 
       const activity = await storage.getActivity(activityId);
       if (!activity) {
@@ -673,13 +673,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Can only adjust time for paused or completed activities" });
       }
 
-      // Create audit log
+      // Validação adicional para operação de subtração
+      if (operation === 'subtract' && (activity.totalTime || 0) < adjustmentSeconds) {
+        return res.status(400).json({ message: "Não é possível subtrair mais tempo do que o disponível" });
+      }
+
+      // Create audit log with operation info
+      const reasonWithOperation = `[${operation === 'add' ? 'ADIÇÃO' : 'SUBTRAÇÃO'}] ${reason}`;
       await storage.createTimeAdjustmentLog({
         activityId,
         userId,
         previousTime: previousTotalTime || activity.totalTime || 0,
         newTime: newTotalTime,
-        reason,
+        reason: reasonWithOperation,
       });
 
       // Update activity time
