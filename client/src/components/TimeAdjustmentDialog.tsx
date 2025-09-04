@@ -184,14 +184,14 @@ export default function TimeAdjustmentDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-lg bg-white border border-gray-200 shadow-lg rounded-lg">
-        <DialogHeader className="pb-4 border-b border-gray-100">
+      <DialogContent className="sm:max-w-md bg-white border border-gray-200 shadow-lg rounded-lg">
+        <DialogHeader className="pb-3 border-b border-gray-100">
           <DialogTitle className="flex items-center gap-3 text-xl font-semibold text-gray-800">
-            <Clock className="w-6 h-6 text-blue-600" />
+            <Clock className="w-5 h-5 text-blue-600" />
             Ajustar Tempo da Atividade
           </DialogTitle>
           <DialogDescription className="text-gray-600 mt-2">
-            <div className="bg-gray-50 p-3 rounded-md">
+            <div className="bg-gray-50 p-2 rounded-md">
               <p><strong>Atividade:</strong> {activity.title}</p>
               <p><strong>Tempo atual:</strong> {formatTime(currentTotalSeconds)}</p>
               <p><strong>Novo tempo:</strong> {formatTime(calculateNewTime())}</p>
@@ -201,31 +201,31 @@ export default function TimeAdjustmentDialog({
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <div className="flex gap-3 p-4 bg-gray-50 rounded-lg">
+            <div className="flex gap-3 p-3 bg-gray-50 rounded-lg">
               <Button
                 type="button"
                 variant={operation === "add" ? "default" : "outline"}
                 onClick={() => setOperation("add")}
-                className={`flex-1 flex items-center gap-2 py-3 px-4 font-medium transition-all ${
+                className={`flex-1 flex items-center gap-2 py-2 px-4 font-medium transition-all ${
                   operation === "add"
                     ? "bg-blue-600 hover:bg-blue-700 text-white shadow-md"
                     : "bg-white hover:bg-gray-100 text-gray-700 border-gray-300"
                 }`}
               >
-                <Plus className="w-5 h-5" />
+                <Plus className="w-4 h-4" />
                 Adicionar Tempo
               </Button>
               <Button
                 type="button"
                 variant={operation === "subtract" ? "default" : "outline"}
                 onClick={() => setOperation("subtract")}
-                className={`flex-1 flex items-center gap-2 py-3 px-4 font-medium transition-all ${
+                className={`flex-1 flex items-center gap-2 py-2 px-4 font-medium transition-all ${
                   operation === "subtract"
                     ? "bg-red-600 hover:bg-red-700 text-white shadow-md"
                     : "bg-white hover:bg-gray-100 text-gray-700 border-gray-300"
                 }`}
               >
-                <Minus className="w-5 h-5" />
+                <Minus className="w-4 h-4" />
                 Remover Tempo
               </Button>
             </div>
@@ -314,7 +314,7 @@ export default function TimeAdjustmentDialog({
                 </div>
               )}
 
-            <DialogFooter className="pt-6 border-t border-gray-100 gap-3">
+            <DialogFooter className="pt-4 border-t border-gray-100 gap-3">
               <Button
                 type="button"
                 variant="outline"
