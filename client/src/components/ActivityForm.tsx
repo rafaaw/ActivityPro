@@ -163,12 +163,12 @@ export default function ActivityForm({
 
   return (
     <Form {...form}>
-      <div className="max-w-3xl mx-auto p-4 bg-white rounded-lg shadow-sm border">
+      <div className="max-w-3xl mx-auto p-4 bg-white dark:bg-gray-800 rounded-lg shadow-sm border dark:border-gray-700">
         <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
           {/* Seção Principal */}
-          <Card className="p-3">
+          <Card className="p-3 dark:bg-gray-700">
             <CardContent className="p-0">
-              <h3 className="text-base font-semibold mb-3 text-gray-800">Informações da Atividade</h3>
+              <h3 className="text-base font-semibold mb-3 text-gray-800 dark:text-white">Informações da Atividade</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <FormField
                   control={form.control}
@@ -330,7 +330,7 @@ export default function ActivityForm({
 
           {/* Subtasks for checklist type */}
           {watchedType === "checklist" && (
-            <Card className="p-3">
+            <Card className="p-3 dark:bg-gray-700">
               <CardContent className="p-0">
                 <h3 className="text-base font-semibold mb-3 text-gray-800">Subtarefas</h3>
                 <div className="space-y-3">
@@ -361,10 +361,10 @@ export default function ActivityForm({
                   </div>
 
                   {subtasks.length > 0 && (
-                    <div className="h-48 overflow-y-auto border rounded-lg p-2 bg-gray-50 space-y-2 resize-y">
+                    <div className="h-48 overflow-y-auto border rounded-lg p-2 bg-gray-50 dark:bg-gray-600 space-y-2 resize-y">
                       {subtasks.map((subtask, index) => (
-                        <div key={index} className="flex items-center justify-between p-2 bg-white rounded border shadow-sm">
-                          <span className="flex-1 text-sm font-medium truncate mr-2">{subtask.title}</span>
+                        <div key={index} className="flex items-center justify-between p-2 bg-white dark:bg-gray-700 rounded border shadow-sm dark:border-gray-600">
+                          <span className="flex-1 text-sm font-medium truncate mr-2 dark:text-white">{subtask.title}</span>
                           <div className="flex items-center gap-1">
                             <Button
                               type="button"
@@ -416,16 +416,16 @@ export default function ActivityForm({
           )}
 
           {/* Retroactive Activity Section */}
-          <Card className="p-3">
+          <Card className="p-3 dark:bg-gray-700">
             <CardContent className="p-0">
               <FormField
                 control={form.control}
                 name="isRetroactive"
                 render={({ field }) => (
-                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 bg-gray-50 hover:bg-gray-100 transition-colors">
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 bg-gray-50 dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors">
                     <div>
-                      <FormLabel className="text-sm font-medium text-gray-800">Atividade Retroativa</FormLabel>
-                      <p className="text-xs text-gray-600 mt-1">
+                      <FormLabel className="text-sm font-medium text-gray-800 dark:text-white">Atividade Retroativa</FormLabel>
+                      <p className="text-xs text-gray-600 dark:text-gray-300 mt-1">
                         Marque se esta atividade já foi realizada
                       </p>
                     </div>
@@ -443,8 +443,8 @@ export default function ActivityForm({
               />
 
               {form.watch("isRetroactive") && (
-                <div className="mt-3 p-3 bg-blue-50 rounded-lg border border-blue-200 space-y-3">
-                  <h4 className="text-sm font-semibold text-blue-800 mb-2">Detalhes da Atividade Retroativa</h4>
+                <div className="mt-3 p-3 bg-blue-50 dark:bg-gray-700 rounded-lg border border-blue-200 dark:border-gray-600 space-y-3">
+                  <h4 className="text-sm font-semibold text-blue-800 dark:text-blue-400 mb-2">Detalhes da Atividade Retroativa</h4>
 
                   {/* Complete All Subtasks Option */}
                   {form.watch("type") === "checklist" && subtasks.length > 0 && (
@@ -452,10 +452,10 @@ export default function ActivityForm({
                       control={form.control}
                       name="completeAllSubtasks"
                       render={({ field }) => (
-                        <FormItem className="flex flex-row items-center justify-between rounded border p-2 bg-white border-blue-300">
+                        <FormItem className="flex flex-row items-center justify-between rounded border p-2 bg-white dark:bg-gray-700 border-blue-300 dark:border-blue-600">
                           <div>
-                            <FormLabel className="text-xs font-medium text-blue-900">Completar Todas as Subtarefas</FormLabel>
-                            <p className="text-xs text-blue-700 mt-1">
+                            <FormLabel className="text-xs font-medium text-blue-900 dark:text-blue-400">Completar Todas as Subtarefas</FormLabel>
+                            <p className="text-xs text-blue-700 dark:text-blue-300 mt-1">
                               Marcar todas as subtarefas como concluídas
                             </p>
                           </div>
@@ -479,7 +479,7 @@ export default function ActivityForm({
                       name="retroactiveStartDate"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-xs font-medium text-blue-900">Data de Início *</FormLabel>
+                          <FormLabel className="text-xs font-medium text-blue-900 dark:text-blue-400">Data de Início *</FormLabel>
                           <FormControl>
                             <Input
                               type="date"
@@ -498,7 +498,7 @@ export default function ActivityForm({
                       name="retroactiveEndDate"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-xs font-medium text-blue-900">Data de Fim *</FormLabel>
+                          <FormLabel className="text-xs font-medium text-blue-900 dark:text-blue-400">Data de Fim *</FormLabel>
                           <FormControl>
                             <Input
                               type="date"
@@ -514,7 +514,7 @@ export default function ActivityForm({
                   </div>
 
                   <div>
-                    <FormLabel className="text-xs font-medium text-blue-900">Tempo Trabalhado *</FormLabel>
+                    <FormLabel className="text-xs font-medium text-blue-900 dark:text-blue-400">Tempo Trabalhado *</FormLabel>
                     <div className="flex gap-2 mt-1">
                       <FormField
                         control={form.control}
@@ -533,7 +533,7 @@ export default function ActivityForm({
                                   className="h-9 pr-10 border-blue-300 focus:border-blue-500"
                                   data-testid="input-retroactive-hours"
                                 />
-                                <span className="absolute right-2 top-1/2 transform -translate-y-1/2 text-xs text-blue-600 font-medium">
+                                <span className="absolute right-2 top-1/2 transform -translate-y-1/2 text-xs text-blue-600 dark:text-blue-400 font-medium">
                                   horas
                                 </span>
                               </div>
@@ -558,7 +558,7 @@ export default function ActivityForm({
                                   className="h-9 pr-12 border-blue-300 focus:border-blue-500"
                                   data-testid="input-retroactive-minutes"
                                 />
-                                <span className="absolute right-2 top-1/2 transform -translate-y-1/2 text-xs text-blue-600 font-medium">
+                                <span className="absolute right-2 top-1/2 transform -translate-y-1/2 text-xs text-blue-600 dark:text-blue-400 font-medium">
                                   minutos
                                 </span>
                               </div>

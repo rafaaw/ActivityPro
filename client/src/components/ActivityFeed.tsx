@@ -28,17 +28,17 @@ const actionLabels = {
 };
 
 const actionColors = {
-  created: "bg-blue-100 text-blue-800",
-  started: "bg-green-100 text-green-800",
-  paused: "bg-yellow-100 text-yellow-800",
-  completed: "bg-emerald-100 text-emerald-800",
-  cancelled: "bg-red-100 text-red-800",
+  created: "bg-blue-100 text-blue-800 dark:bg-blue-950/50 dark:text-blue-400",
+  started: "bg-green-100 text-green-800 dark:bg-green-950/50 dark:text-green-400",
+  paused: "bg-yellow-100 text-yellow-800 dark:bg-yellow-950/50 dark:text-yellow-400",
+  completed: "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-400",
+  cancelled: "bg-red-100 text-red-800 dark:bg-red-950/50 dark:text-red-400",
 };
 
 function formatTimeSpent(seconds: number): string {
   const hours = Math.floor(seconds / 3600);
   const minutes = Math.floor((seconds % 3600) / 60);
-  
+
   if (hours > 0) {
     return `${hours}h ${minutes}m`;
   }
@@ -68,9 +68,9 @@ export function ActivityFeed({ showUserInfo = true, logs: providedLogs }: Activi
 
   if (logs.length === 0) {
     return (
-      <Card className="p-6 text-center">
+      <Card className="p-6 text-center dark:bg-gray-800">
         <Clock className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-        <p className="text-gray-500">Nenhuma atividade recente</p>
+        <p className="text-gray-500 dark:text-gray-400">Nenhuma atividade recente</p>
       </Card>
     );
   }
@@ -81,9 +81,9 @@ export function ActivityFeed({ showUserInfo = true, logs: providedLogs }: Activi
         const Icon = actionIcons[log.action as keyof typeof actionIcons];
         const actionLabel = actionLabels[log.action as keyof typeof actionLabels];
         const colorClass = actionColors[log.action as keyof typeof actionColors];
-        
+
         return (
-          <Card key={log.id} className="p-4 border-l-4 border-l-purple-500" data-testid={`log-entry-${log.id}`}>
+          <Card key={log.id} className="p-4 border-l-4 border-l-purple-500 dark:bg-gray-800 dark:border-l-purple-400" data-testid={`log-entry-${log.id}`}>
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
                 <div className={`p-2 rounded-full ${colorClass}`}>
@@ -92,23 +92,23 @@ export function ActivityFeed({ showUserInfo = true, logs: providedLogs }: Activi
                 <div>
                   <p className="text-sm">
                     {showUserInfo && (
-                      <span className="font-medium text-gray-900">
+                      <span className="font-medium text-gray-900 dark:text-white">
                         {log.user.firstName} {log.user.lastName}
                       </span>
                     )}
                     {showUserInfo ? " " : ""}
-                    <span className="text-gray-700">
+                    <span className="text-gray-700 dark:text-gray-300">
                       {actionLabel} a atividade
                     </span>
-                    <span className="font-medium text-gray-900 ml-1">
+                    <span className="font-medium text-gray-900 dark:text-white ml-1">
                       "{log.activityTitle}"
                     </span>
                   </p>
                   <div className="flex items-center space-x-3 mt-1">
-                    <p className="text-xs text-gray-500">
-                      {log.createdAt && formatDistanceToNow(new Date(log.createdAt), { 
-                        addSuffix: true, 
-                        locale: ptBR 
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      {log.createdAt && formatDistanceToNow(new Date(log.createdAt), {
+                        addSuffix: true,
+                        locale: ptBR
                       })}
                     </p>
                     {log.timeSpent && log.timeSpent > 0 && (

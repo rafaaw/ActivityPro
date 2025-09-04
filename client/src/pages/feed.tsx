@@ -137,10 +137,10 @@ export default function Feed() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold font-display" data-testid="text-page-title">
+            <h1 className="text-3xl font-bold font-display dark:text-white" data-testid="text-page-title">
               {getPageTitle()}
             </h1>
-            <p className="text-muted-foreground">
+            <p className="text-muted-foreground dark:text-gray-300">
               {getPageDescription()}
             </p>
           </div>
@@ -178,7 +178,7 @@ export default function Feed() {
           {/* Filtro por usuário - apenas para admin e chefe de setor */}
           {(user?.role === 'admin' || user?.role === 'sector_chief') && (
             <div className="flex-1 min-w-[200px]">
-              <label className="text-sm font-medium mb-2 block">
+              <label className="text-sm font-medium dark:text-white">
                 Filtrar por usuário:
               </label>
               <Select value={selectedUserId} onValueChange={setSelectedUserId}>
@@ -223,7 +223,7 @@ export default function Feed() {
         {/* Feed */}
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center">
+            <CardTitle className="flex items-center dark:text-white">
               <Users className="h-5 w-5 mr-2" />
               Atividades Recentes
             </CardTitle>

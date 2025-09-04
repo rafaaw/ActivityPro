@@ -34,7 +34,7 @@ export default function RecentHistory({ activities }: RecentHistoryProps) {
         type: 'completed',
         activityTitle: activity.title,
         timestamp: new Date(activity.completedAt),
-        duration: activity.totalTime,
+        duration: activity.totalTime || undefined,
       });
     }
 
@@ -83,11 +83,11 @@ export default function RecentHistory({ activities }: RecentHistoryProps) {
 
   const getHistoryColor = (type: string) => {
     switch (type) {
-      case 'completed': return 'bg-success/10 text-success';
-      case 'paused': return 'bg-orange-100 text-orange-600';
-      case 'started': return 'bg-blue-100 text-blue-600';
-      case 'cancelled': return 'bg-gray-100 text-gray-600';
-      default: return 'bg-success/10 text-success';
+      case 'completed': return 'bg-success/10 text-success dark:bg-green-950/50 dark:text-green-400';
+      case 'paused': return 'bg-orange-100 text-orange-600 dark:bg-orange-950/50 dark:text-orange-400';
+      case 'started': return 'bg-blue-100 text-blue-600 dark:bg-blue-950/50 dark:text-blue-400';
+      case 'cancelled': return 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400';
+      default: return 'bg-success/10 text-success dark:bg-green-950/50 dark:text-green-400';
     }
   };
 
@@ -111,14 +111,14 @@ export default function RecentHistory({ activities }: RecentHistoryProps) {
   return (
     <Card data-testid="card-recent-history">
       <CardHeader>
-        <CardTitle className="flex items-center">
+        <CardTitle className="flex items-center dark:text-white">
           <History className="text-primary mr-2 w-5 h-5" />
           Histórico Recente
         </CardTitle>
       </CardHeader>
       <CardContent>
         {sortedHistory.length === 0 ? (
-          <p className="text-center text-muted-foreground py-8" data-testid="text-no-history">
+          <p className="text-center text-muted-foreground py-8 dark:text-gray-400" data-testid="text-no-history">
             Nenhuma atividade recente
           </p>
         ) : (
@@ -136,12 +136,12 @@ export default function RecentHistory({ activities }: RecentHistoryProps) {
                     <Icon className="w-3 h-3" />
                   </div>
                   <div className="flex-1">
-                    <p className="text-foreground">
-                      {getHistoryAction(item.type)} <span className="font-medium" data-testid="text-history-activity">
+                    <p className="text-foreground dark:text-white">
+                      {getHistoryAction(item.type)} <span className="font-medium dark:text-white" data-testid="text-history-activity">
                         {item.activityTitle}
                       </span>
                     </p>
-                    <p className="text-muted-foreground text-xs" data-testid="text-history-timestamp">
+                    <p className="text-muted-foreground text-xs dark:text-gray-400" data-testid="text-history-timestamp">
                       {formatDistanceToNow(item.timestamp, {
                         addSuffix: true,
                         locale: ptBR
