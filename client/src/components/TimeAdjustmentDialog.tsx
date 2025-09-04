@@ -184,40 +184,48 @@ export default function TimeAdjustmentDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Clock className="w-5 h-5" />
+      <DialogContent className="sm:max-w-lg bg-white border border-gray-200 shadow-lg rounded-lg">
+        <DialogHeader className="pb-4 border-b border-gray-100">
+          <DialogTitle className="flex items-center gap-3 text-xl font-semibold text-gray-800">
+            <Clock className="w-6 h-6 text-blue-600" />
             Ajustar Tempo da Atividade
           </DialogTitle>
-          <DialogDescription>
-            Atividade: <strong>{activity.title}</strong>
-            <br />
-            Tempo atual: <strong>{formatTime(currentTotalSeconds)}</strong>
-            <br />
-            Novo tempo: <strong>{formatTime(calculateNewTime())}</strong>
+          <DialogDescription className="text-gray-600 mt-2">
+            <div className="bg-gray-50 p-3 rounded-md">
+              <p><strong>Atividade:</strong> {activity.title}</p>
+              <p><strong>Tempo atual:</strong> {formatTime(currentTotalSeconds)}</p>
+              <p><strong>Novo tempo:</strong> {formatTime(calculateNewTime())}</p>
+            </div>
           </DialogDescription>
         </DialogHeader>
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <div className="flex gap-2 mb-4">
+            <div className="flex gap-3 p-4 bg-gray-50 rounded-lg">
               <Button
                 type="button"
                 variant={operation === "add" ? "default" : "outline"}
                 onClick={() => setOperation("add")}
-                className="flex-1 flex items-center gap-2"
+                className={`flex-1 flex items-center gap-2 py-3 px-4 font-medium transition-all ${
+                  operation === "add"
+                    ? "bg-blue-600 hover:bg-blue-700 text-white shadow-md"
+                    : "bg-white hover:bg-gray-100 text-gray-700 border-gray-300"
+                }`}
               >
-                <Plus className="w-4 h-4" />
+                <Plus className="w-5 h-5" />
                 Adicionar Tempo
               </Button>
               <Button
                 type="button"
                 variant={operation === "subtract" ? "default" : "outline"}
                 onClick={() => setOperation("subtract")}
-                className="flex-1 flex items-center gap-2"
+                className={`flex-1 flex items-center gap-2 py-3 px-4 font-medium transition-all ${
+                  operation === "subtract"
+                    ? "bg-red-600 hover:bg-red-700 text-white shadow-md"
+                    : "bg-white hover:bg-gray-100 text-gray-700 border-gray-300"
+                }`}
               >
-                <Minus className="w-4 h-4" />
+                <Minus className="w-5 h-5" />
                 Remover Tempo
               </Button>
             </div>
@@ -227,13 +235,14 @@ export default function TimeAdjustmentDialog({
                 name="hours"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Horas</FormLabel>
+                    <FormLabel className="text-sm font-medium text-gray-700">Horas</FormLabel>
                     <FormControl>
                       <Input
                         type="number"
                         min="0"
                         max="23"
                         placeholder="0"
+                        className="border-gray-300 focus:border-blue-500 focus:ring-blue-500 rounded-md"
                         {...field}
                         onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
                         data-testid="input-adjustment-hours"
@@ -249,13 +258,14 @@ export default function TimeAdjustmentDialog({
                 name="minutes"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Minutos</FormLabel>
+                    <FormLabel className="text-sm font-medium text-gray-700">Minutos</FormLabel>
                     <FormControl>
                       <Input
                         type="number"
                         min="0"
                         max="59"
                         placeholder="0"
+                        className="border-gray-300 focus:border-blue-500 focus:ring-blue-500 rounded-md"
                         {...field}
                         onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
                         data-testid="input-adjustment-minutes"
@@ -272,10 +282,12 @@ export default function TimeAdjustmentDialog({
               name="reason"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Motivo do Ajuste *</FormLabel>
+                  <FormLabel className="text-sm font-medium text-gray-700">Motivo do Ajuste *</FormLabel>
                   <FormControl>
                     <Textarea
                       placeholder={`Explique o motivo para ${operation === "add" ? "adicionar" : "remover"} tempo...`}
+                      className="border-gray-300 focus:border-blue-500 focus:ring-blue-500 rounded-md resize-none"
+                      rows={3}
                       {...field}
                       data-testid="textarea-adjustment-reason"
                     />
@@ -286,8 +298,8 @@ export default function TimeAdjustmentDialog({
             />
 
             {operation === "subtract" && calculateNewTime() === 0 && (
-              <div className="text-sm text-amber-600 bg-amber-50 p-3 rounded-md">
-                ⚠️ O tempo será reduzido para 0 (zero)
+              <div className="text-xs text-amber-700 bg-amber-50 border border-amber-200 px-2 py-1 rounded mb-2">
+                ⚠️ Tempo será reduzido para 0
               </div>
             )}
 
@@ -297,17 +309,18 @@ export default function TimeAdjustmentDialog({
               const adjustmentSeconds = (hours * 3600) + (minutes * 60);
               return adjustmentSeconds > currentTotalSeconds;
             })() && (
-                <div className="text-sm text-red-600 bg-red-50 p-3 rounded-md">
-                  ❌ Não é possível remover mais tempo do que o disponível ({formatTime(currentTotalSeconds)})
+                <div className="text-xs text-red-700 bg-red-50 border border-red-200 px-2 py-1 rounded mb-2">
+                  ❌ Tempo insuficiente ({formatTime(currentTotalSeconds)})
                 </div>
               )}
 
-            <DialogFooter>
+            <DialogFooter className="pt-6 border-t border-gray-100 gap-3">
               <Button
                 type="button"
                 variant="outline"
                 onClick={onClose}
                 disabled={timeAdjustmentMutation.isPending}
+                className="px-6 py-2 border-gray-300 hover:bg-gray-50 text-gray-700 font-medium"
               >
                 Cancelar
               </Button>
@@ -327,6 +340,11 @@ export default function TimeAdjustmentDialog({
                     return (hours * 3600) + (minutes * 60) === 0;
                   })()
                 }
+                className={`px-6 py-2 font-medium transition-all ${
+                  operation === "add"
+                    ? "bg-blue-600 hover:bg-blue-700 text-white"
+                    : "bg-red-600 hover:bg-red-700 text-white"
+                }`}
                 data-testid="button-submit-adjustment"
               >
                 {timeAdjustmentMutation.isPending
