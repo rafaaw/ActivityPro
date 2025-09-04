@@ -5,14 +5,17 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { ThemeCard } from "@/components/ThemeCard";
 import { useAuth } from "@/hooks/useAuth";
+import { useTheme } from "@/hooks/useTheme";
 import { useToast } from "@/hooks/use-toast";
-import { Bell, Save } from "lucide-react";
+import { Bell, Save, Palette } from "lucide-react";
 import type { UserSettings } from "@shared/schema";
 
 export default function Settings() {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { theme, setTheme } = useTheme();
   const queryClient = useQueryClient();
   const [teamNotificationsEnabled, setTeamNotificationsEnabled] = useState(false);
 
@@ -117,6 +120,40 @@ export default function Settings() {
             </CardContent>
           </Card>
         )}
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Palette className="h-5 w-5" />
+              Aparência
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="space-y-4">
+              <div>
+                <Label className="text-base font-medium">
+                  Tema da Interface
+                </Label>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Escolha como você deseja que a interface seja exibida.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <ThemeCard
+                  theme="light"
+                  currentTheme={theme}
+                  onSelect={setTheme}
+                />
+                <ThemeCard
+                  theme="dark"
+                  currentTheme={theme}
+                  onSelect={setTheme}
+                />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
         <Card>
           <CardHeader>

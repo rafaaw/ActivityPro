@@ -206,11 +206,10 @@ export default function TimeAdjustmentDialog({
                 type="button"
                 variant={operation === "add" ? "default" : "outline"}
                 onClick={() => setOperation("add")}
-                className={`flex-1 flex items-center gap-2 py-2 px-4 font-medium transition-all ${
-                  operation === "add"
+                className={`flex-1 flex items-center gap-2 py-2 px-4 font-medium transition-all ${operation === "add"
                     ? "bg-blue-600 hover:bg-blue-700 text-white shadow-md"
                     : "bg-white hover:bg-gray-100 text-gray-700 border-gray-300"
-                }`}
+                  }`}
               >
                 <Plus className="w-4 h-4" />
                 Adicionar Tempo
@@ -219,11 +218,10 @@ export default function TimeAdjustmentDialog({
                 type="button"
                 variant={operation === "subtract" ? "default" : "outline"}
                 onClick={() => setOperation("subtract")}
-                className={`flex-1 flex items-center gap-2 py-2 px-4 font-medium transition-all ${
-                  operation === "subtract"
+                className={`flex-1 flex items-center gap-2 py-2 px-4 font-medium transition-all ${operation === "subtract"
                     ? "bg-red-600 hover:bg-red-700 text-white shadow-md"
                     : "bg-white hover:bg-gray-100 text-gray-700 border-gray-300"
-                }`}
+                  }`}
               >
                 <Minus className="w-4 h-4" />
                 Remover Tempo
@@ -340,11 +338,10 @@ export default function TimeAdjustmentDialog({
                     return (hours * 3600) + (minutes * 60) === 0;
                   })()
                 }
-                className={`px-6 py-2 font-medium transition-all ${
-                  operation === "add"
+                className={`px-6 py-2 font-medium transition-all ${operation === "add"
                     ? "bg-blue-600 hover:bg-blue-700 text-white"
                     : "bg-red-600 hover:bg-red-700 text-white"
-                }`}
+                  }`}
                 data-testid="button-submit-adjustment"
               >
                 {timeAdjustmentMutation.isPending

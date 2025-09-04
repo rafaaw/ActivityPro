@@ -95,16 +95,16 @@ export default function Login() {
   return (
     <div className="min-h-screen gradient-bg flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        <Card className="shadow-2xl border-0 bg-white/95 backdrop-blur-sm">
+        <Card className="shadow-2xl border-0 bg-white/95 backdrop-blur-sm dark:bg-gray-800/95 dark:border-gray-700">
           <CardHeader className="space-y-4 text-center">
             <div className="mx-auto w-16 h-16 gradient-bg rounded-full flex items-center justify-center">
               <Timer className="w-8 h-8 text-white" />
             </div>
             <div>
-              <CardTitle className="text-2xl font-display font-bold">
-                ActivityPro
+              <CardTitle className="text-2xl font-display font-bold dark:text-white">
+                Entrar
               </CardTitle>
-              <CardDescription className="text-base mt-2">
+              <CardDescription className="text-base mt-2 dark:text-gray-300">
                 Sistema de Controle de Atividades e Tempo
               </CardDescription>
             </div>
@@ -157,9 +157,9 @@ export default function Login() {
                             data-testid="button-toggle-password"
                           >
                             {showPassword ? (
-                              <EyeOff className="h-4 w-4 text-muted-foreground" />
+                              <EyeOff className="h-4 w-4 text-muted-foreground dark:text-gray-400" />
                             ) : (
-                              <Eye className="h-4 w-4 text-muted-foreground" />
+                              <Eye className="h-4 w-4 text-muted-foreground dark:text-gray-400" />
                             )}
                           </Button>
                         </div>
@@ -178,7 +178,7 @@ export default function Login() {
                   />
                   <label
                     htmlFor="remember-user"
-                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 dark:text-white"
                   >
                     Lembrar usuário
                   </label>

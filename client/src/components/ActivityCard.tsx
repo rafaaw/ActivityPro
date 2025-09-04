@@ -142,11 +142,11 @@ export default function ActivityCard({ activity }: ActivityCardProps) {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'next': return 'border-blue-200 bg-blue-50';
-      case 'in_progress': return 'border-green-200 bg-green-50';
-      case 'paused': return 'border-orange-200 bg-orange-50';
-      case 'completed': return 'border-green-200 bg-green-50';
-      case 'cancelled': return 'border-red-400 bg-red-100';
+      case 'next': return 'border-blue-200 bg-blue-50 dark:border-blue-700 dark:bg-blue-950/50';
+      case 'in_progress': return 'border-green-200 bg-green-50 dark:border-green-700 dark:bg-green-950/50';
+      case 'paused': return 'border-orange-200 bg-orange-50 dark:border-orange-700 dark:bg-orange-950/50';
+      case 'completed': return 'border-green-200 bg-green-50 dark:border-green-700 dark:bg-green-950/50';
+      case 'cancelled': return 'border-red-400 bg-red-100 dark:border-red-700 dark:bg-red-950/50';
       default: return 'border-border bg-background';
     }
   };
@@ -312,10 +312,10 @@ export default function ActivityCard({ activity }: ActivityCardProps) {
       <CardContent className="p-4">
         <div className="flex items-start justify-between mb-3">
           <div className="flex-1 min-w-0 mr-4">
-            <h4 className="font-medium text-foreground line-clamp-2 mb-2" data-testid="text-activity-title">
+            <h4 className="font-medium text-foreground line-clamp-2 mb-2 dark:text-white" data-testid="text-activity-title">
               {activity.title}
             </h4>
-            <div className="flex items-center flex-wrap gap-2 text-xs text-muted-foreground">
+            <div className="flex items-center flex-wrap gap-2 text-xs text-muted-foreground dark:text-gray-300">
               <span data-testid="text-activity-plant">{activity.plant || activity.plantRef?.name || 'N/A'}</span>
               {activity.project && (
                 <>
@@ -332,7 +332,7 @@ export default function ActivityCard({ activity }: ActivityCardProps) {
               {activity.observations && (
                 <>
                   <span>•</span>
-                  <span data-testid="text-activity-observations" className="italic text-gray-600">
+                  <span data-testid="text-activity-observations" className="italic text-gray-600 dark:text-gray-400">
                     {activity.observations.length > 50
                       ? `${activity.observations.substring(0, 50)}...`
                       : activity.observations}
@@ -362,10 +362,10 @@ export default function ActivityCard({ activity }: ActivityCardProps) {
         {activity.type === 'checklist' && (
           <div className="mb-4">
             <div className="flex items-center justify-between mb-2">
-              <p className="text-xs text-muted-foreground">
+              <p className="text-xs text-muted-foreground dark:text-gray-300">
                 Subtarefas ({activity.subtasks ? activity.subtasks.filter(s => s.completed).length : 0}/{activity.subtasks ? activity.subtasks.length : 0})
               </p>
-              <span className="text-xs font-medium text-primary">
+              <span className="text-xs font-medium text-primary dark:text-blue-400">
                 {getProgressPercentage()}%
               </span>
             </div>
@@ -403,8 +403,8 @@ export default function ActivityCard({ activity }: ActivityCardProps) {
                       <span className={cn(
                         "flex-1 transition-all duration-200",
                         subtask.completed
-                          ? "line-through text-muted-foreground"
-                          : "text-foreground group-hover:text-primary"
+                          ? "line-through text-muted-foreground dark:text-gray-400"
+                          : "text-foreground group-hover:text-primary dark:text-white dark:group-hover:text-blue-400"
                       )}>
                         {subtask.title}
                       </span>
@@ -412,7 +412,7 @@ export default function ActivityCard({ activity }: ActivityCardProps) {
                   ))}
                 </>
               ) : (
-                <div className="text-xs text-muted-foreground italic p-2 text-center border border-dashed rounded">
+                <div className="text-xs text-muted-foreground dark:text-gray-400 italic p-2 text-center border border-dashed rounded dark:border-gray-600">
                   {activity.status === 'in_progress'
                     ? "Carregando subtarefas..."
                     : "Nenhuma subtarefa definida"

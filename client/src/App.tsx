@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ActivityModalProvider } from "@/contexts/ActivityModalContext";
 import { useAuth } from "@/hooks/useAuth";
+import { ThemeProvider } from "next-themes";
 import NotFound from "@/pages/not-found";
 import Login from "@/pages/Login";
 import Dashboard from "@/pages/dashboard";
@@ -58,12 +59,14 @@ function Router() {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <ActivityModalProvider>
-          <Toaster />
-          <Router />
-        </ActivityModalProvider>
-      </TooltipProvider>
+      <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
+        <TooltipProvider>
+          <ActivityModalProvider>
+            <Toaster />
+            <Router />
+          </ActivityModalProvider>
+        </TooltipProvider>
+      </ThemeProvider>
     </QueryClientProvider>
   );
 }

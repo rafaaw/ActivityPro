@@ -54,11 +54,11 @@ export default function Dashboard() {
                 {statsLoading ? (
                   <Skeleton className="h-6 md:h-8 w-12 md:w-16 mx-auto mb-1 md:mb-2" />
                 ) : (
-                  <p className="text-lg md:text-2xl font-bold text-foreground" data-testid="text-today-time">
+                  <p className="text-lg md:text-2xl font-bold text-foreground dark:text-white" data-testid="text-today-time">
                     {stats?.todayHours || 0}h {stats?.todayMinutes || 0}m
                   </p>
                 )}
-                <p className="text-xs md:text-sm text-muted-foreground">Hoje</p>
+                <p className="text-xs md:text-sm text-muted-foreground dark:text-gray-300">Hoje</p>
               </div>
             </CardContent>
           </Card>
@@ -69,11 +69,11 @@ export default function Dashboard() {
                 {statsLoading ? (
                   <Skeleton className="h-6 md:h-8 w-12 md:w-16 mx-auto mb-1 md:mb-2" />
                 ) : (
-                  <p className="text-lg md:text-2xl font-bold text-foreground" data-testid="text-week-time">
+                  <p className="text-lg md:text-2xl font-bold text-foreground dark:text-white" data-testid="text-week-time">
                     {stats?.weekHours || 0}h {stats?.weekMinutes || 0}m
                   </p>
                 )}
-                <p className="text-xs md:text-sm text-muted-foreground">Esta semana</p>
+                <p className="text-xs md:text-sm text-muted-foreground dark:text-gray-300">Esta semana</p>
               </div>
             </CardContent>
           </Card>
@@ -81,10 +81,10 @@ export default function Dashboard() {
           <Card>
             <CardContent className="p-3 md:p-4">
               <div className="text-center">
-                <p className="text-lg md:text-2xl font-bold text-foreground" data-testid="text-completed-today">
+                <p className="text-lg md:text-2xl font-bold text-foreground dark:text-white" data-testid="text-completed-today">
                   {completedToday.length}
                 </p>
-                <p className="text-xs md:text-sm text-muted-foreground">Concluídas</p>
+                <p className="text-xs md:text-sm text-muted-foreground dark:text-gray-300">Concluídas</p>
               </div>
             </CardContent>
           </Card>
@@ -92,10 +92,10 @@ export default function Dashboard() {
           <Card>
             <CardContent className="p-3 md:p-4">
               <div className="text-center">
-                <p className="text-lg md:text-2xl font-bold text-foreground" data-testid="text-total-activities">
+                <p className="text-lg md:text-2xl font-bold text-foreground dark:text-white" data-testid="text-total-activities">
                   {userActivities.length}
                 </p>
-                <p className="text-xs md:text-sm text-muted-foreground">Total</p>
+                <p className="text-xs md:text-sm text-muted-foreground dark:text-gray-300">Total</p>
               </div>
             </CardContent>
           </Card>
