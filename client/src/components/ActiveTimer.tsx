@@ -109,10 +109,10 @@ export default function ActiveTimer({ activity }: ActiveTimerProps) {
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
-      case 'high': return 'bg-red-100 text-red-800';
-      case 'medium': return 'bg-yellow-100 text-yellow-800';
-      case 'low': return 'bg-green-100 text-green-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'high': return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200';
+      case 'medium': return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200';
+      case 'low': return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
+      default: return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200';
     }
   };
 
@@ -171,21 +171,29 @@ export default function ActiveTimer({ activity }: ActiveTimerProps) {
   };
 
   return (
-    <Card className="gradient-bg text-white shadow-lg" data-testid="card-active-timer">
-      <div className="p-4 md:p-6">
+    <Card className="relative overflow-hidden gradient-bg dark:bg-gradient-to-br dark:from-slate-700 dark:via-slate-800 dark:to-slate-900 text-white shadow-xl border-0 transform hover:scale-[1.01] transition-all duration-300" data-testid="card-active-timer">
+      {/* Subtle border effect */}
+      <div className="absolute inset-0 bg-gradient-to-r from-primary/60 via-secondary/60 to-primary/60 dark:from-slate-500 dark:via-slate-600 dark:to-slate-700 opacity-40"></div>
+      <div className="absolute inset-[1px] gradient-bg dark:bg-gradient-to-br dark:from-slate-700 dark:via-slate-800 dark:to-slate-900 rounded-lg"></div>
+
+      {/* Content */}
+      <div className="relative p-4 md:p-6 backdrop-blur-sm">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 md:gap-0">
           <div className="flex items-center space-x-3 md:space-x-4">
-            <div className="w-10 h-10 md:w-12 md:h-12 bg-white/20 rounded-full flex items-center justify-center animate-pulse">
-              <Play className="text-white w-5 h-5 md:w-6 md:h-6" />
+            <div className="relative">
+              <div className="w-10 h-10 md:w-12 md:h-12 bg-white/30 backdrop-blur-sm rounded-full flex items-center justify-center animate-bounce shadow-lg ring-2 ring-white/50">
+                <Play className="text-white w-5 h-5 md:w-6 md:h-6 drop-shadow-lg" />
+              </div>
+              {/* Pulsing ring effect */}
+              <div className="absolute inset-0 w-10 h-10 md:w-12 md:h-12 bg-white/20 rounded-full animate-ping"></div>
             </div>
             <div className="flex-1 min-w-0">
-              <h3 className="font-display font-semibold text-base md:text-lg truncate" data-testid="text-activity-title">
+              <h3 className="font-display font-bold text-base md:text-lg truncate drop-shadow-md text-white" data-testid="text-activity-title">
                 {activity.title}
               </h3>
-              <div className="flex items-center space-x-2 md:space-x-4 text-white/80 text-xs md:text-sm mt-1 overflow-hidden">
-                <span className="truncate" data-testid="text-activity-plant">{activity.plant || activity.plantRef?.name || 'N/A'}</span>
-                <span className="hidden md:inline">•</span>
-                <span className={cn("px-1.5 py-0.5 md:px-2 md:py-1 rounded text-xs font-medium", getPriorityColor(activity.priority))} data-testid="badge-activity-priority">
+              <div className="flex items-center space-x-2 md:space-x-4 text-white/90 text-xs md:text-sm mt-1 overflow-hidden">
+                <span className="truncate backdrop-blur-sm bg-white/10 px-2 py-1 rounded-full" data-testid="text-activity-plant">{activity.plant || activity.plantRef?.name || 'N/A'}</span>
+                <span className={cn("px-2 py-1 rounded-full text-xs font-bold shadow-lg backdrop-blur-sm", getPriorityColor(activity.priority))} data-testid="badge-activity-priority">
                   {getPriorityText(activity.priority)}
                 </span>
                 {activity.project && (
@@ -213,17 +221,20 @@ export default function ActiveTimer({ activity }: ActiveTimerProps) {
           </div>
 
           <div className="text-center md:text-right">
-            <div className="text-2xl md:text-3xl font-bold" data-testid="text-elapsed-time">
-              {formatTime(elapsedTime)}
+            <div className="relative">
+              <div className="text-3xl md:text-4xl font-bold font-mono bg-white/10 backdrop-blur-sm px-4 py-2 rounded-lg shadow-lg border border-white/20" data-testid="text-elapsed-time">
+                {formatTime(elapsedTime)}
+              </div>
+              <div className="absolute -inset-1 bg-gradient-to-r from-blue-400 to-purple-400 rounded-lg opacity-20 blur-sm"></div>
             </div>
-            <p className="text-white/80 text-xs md:text-sm">Tempo decorrido</p>
+            <p className="text-white/90 text-xs md:text-sm mt-2 font-medium">Tempo decorrido</p>
 
             {/* Timer Controls */}
-            <div className="flex items-center justify-center md:justify-end space-x-2 mt-2 md:mt-3">
+            <div className="flex items-center justify-center md:justify-end space-x-3 mt-4">
               <Button
                 variant="ghost"
                 size="sm"
-                className="bg-white/20 hover:bg-white/30 text-white text-xs md:text-sm hover:scale-110 transition-transform"
+                className="bg-white/20 hover:bg-white/30 text-white text-xs md:text-sm hover:scale-105 transition-all duration-200 backdrop-blur-sm border border-white/30 shadow-lg font-semibold"
                 onClick={handlePause}
                 disabled={updateActivityMutation.isPending}
                 data-testid="button-pause-activity"
@@ -234,9 +245,9 @@ export default function ActiveTimer({ activity }: ActiveTimerProps) {
               <Button
                 variant="ghost"
                 size="sm"
-                className={`text-xs md:text-sm hover:scale-110 transition-transform ${!areAllSubtasksCompleted()
-                  ? 'bg-gray-500/50 hover:bg-gray-500/60 text-white/50 cursor-not-allowed'
-                  : 'bg-white/20 hover:bg-white/30 text-white'
+                className={`text-xs md:text-sm hover:scale-105 transition-all duration-200 backdrop-blur-sm border shadow-lg font-semibold ${!areAllSubtasksCompleted()
+                  ? 'bg-gray-500/30 hover:bg-gray-500/40 text-white/60 cursor-not-allowed border-gray-400/30'
+                  : 'bg-green-600/40 hover:bg-green-600/50 dark:bg-green-500/30 dark:hover:bg-green-500/40 text-white border-green-500/50 dark:border-green-400/50'
                   }`}
                 onClick={handleComplete}
                 disabled={updateActivityMutation.isPending || !areAllSubtasksCompleted()}
@@ -252,14 +263,14 @@ export default function ActiveTimer({ activity }: ActiveTimerProps) {
 
         {/* Subtasks Section */}
         {activity.type === 'checklist' && (
-          <div className="mt-6 pt-4 border-t border-white/20">
+          <div className="mt-6 pt-4 border-t border-white/30 dark:border-white/30 bg-white/10 dark:bg-white/5 rounded-lg p-4 backdrop-blur-sm">
             <div className="flex items-center justify-between mb-3">
               <button
                 onClick={() => setSubtasksExpanded(!subtasksExpanded)}
-                className="flex items-center space-x-2 text-white hover:text-white/80 hover:scale-105 transition-transform"
+                className="flex items-center space-x-2 text-white hover:text-white/80 hover:scale-105 transition-all duration-200 font-semibold"
                 data-testid="button-toggle-subtasks"
               >
-                <h4 className="font-medium text-sm">
+                <h4 className="font-bold text-base bg-gradient-to-r from-white to-white/80 bg-clip-text text-transparent">
                   Subtarefas ({activity.subtasks ? activity.subtasks.filter(s => s.completed).length : 0}/{activity.subtasks ? activity.subtasks.length : 0})
                 </h4>
                 {subtasksExpanded ? (
@@ -268,15 +279,15 @@ export default function ActiveTimer({ activity }: ActiveTimerProps) {
                   <ChevronDown className="w-4 h-4" />
                 )}
               </button>
-              <span className="text-white/80 text-sm font-medium">
+              <span className="text-white/90 dark:text-white/80 text-sm font-bold bg-white/20 dark:bg-white/10 px-2 py-1 rounded-full backdrop-blur-sm">
                 {getProgressPercentage()}%
               </span>
             </div>
 
             {/* Progress Bar - Always visible */}
-            <div className="w-full bg-white/20 rounded-full h-2 mb-4">
+            <div className="w-full bg-white/30 dark:bg-white/20 rounded-full h-2 mb-4 shadow-inner">
               <div
-                className="bg-white h-2 rounded-full transition-all duration-300"
+                className="bg-gradient-to-r from-white to-white/90 dark:from-blue-500 dark:to-blue-600 h-2 rounded-full transition-all duration-300 shadow-sm"
                 style={{ width: `${getProgressPercentage()}%` }}
               ></div>
             </div>
@@ -288,34 +299,40 @@ export default function ActiveTimer({ activity }: ActiveTimerProps) {
                   activity.subtasks.map((subtask) => (
                     <div
                       key={subtask.id}
-                      className="flex items-center space-x-3 text-sm group hover:bg-white/10 p-2 rounded transition-colors"
+                      className="flex items-center space-x-3 text-sm group hover:bg-white/20 dark:hover:bg-white/15 p-3 rounded-lg transition-all duration-200 border border-white/20 dark:border-white/10 backdrop-blur-sm hover:border-white/30 dark:hover:border-white/20 hover:shadow-lg"
                       data-testid={`subtask-${subtask.id}`}
                     >
                       <button
                         onClick={() => handleSubtaskToggle(subtask.id, subtask.completed || false)}
                         disabled={updateSubtaskMutation.isPending}
-                        className="flex items-center justify-center w-5 h-5 hover:scale-110 transition-transform"
+                        className="flex items-center justify-center w-6 h-6 hover:scale-110 transition-all duration-200"
                         data-testid={`checkbox-subtask-${subtask.id}`}
                       >
                         {subtask.completed ? (
-                          <CheckSquare className="w-5 h-5 text-white" />
+                          <CheckSquare className="w-6 h-6 text-green-400 drop-shadow-lg" />
                         ) : (
-                          <Square className="w-5 h-5 text-white/60 hover:text-white" />
+                          <Square className="w-6 h-6 text-white/60 hover:text-white border-white/40 hover:border-white" />
                         )}
                       </button>
                       <span className={cn(
-                        "flex-1 transition-all duration-200 text-white",
+                        "flex-1 transition-all duration-200 font-medium",
                         subtask.completed
                           ? "line-through text-white/60"
-                          : "group-hover:text-white"
+                          : "text-white group-hover:text-white drop-shadow-sm"
                       )}>
                         {subtask.title}
                       </span>
+                      {subtask.completed && (
+                        <div className="w-2 h-2 bg-green-400 rounded-full"></div>
+                      )}
                     </div>
                   ))
                 ) : (
-                  <div className="text-white/60 text-sm italic p-2 text-center border border-white/20 border-dashed rounded">
-                    Carregando subtarefas...
+                  <div className="text-white/80 dark:text-white/70 text-sm italic p-4 text-center border border-white/40 dark:border-white/30 border-dashed rounded-lg bg-white/10 dark:bg-white/5 backdrop-blur-sm">
+                    <div className="flex items-center justify-center space-x-2">
+                      <div className="w-4 h-4 border-2 border-white/40 dark:border-white/30 border-t-white rounded-full animate-spin"></div>
+                      <span>Carregando subtarefas...</span>
+                    </div>
                   </div>
                 )}
                 {/* Warning when expanded and subtasks incomplete */}
