@@ -193,6 +193,7 @@ export const userSettings = pgTable("user_settings", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").references(() => users.id).notNull().unique(),
   teamNotificationsEnabled: boolean("team_notifications_enabled").default(false),
+  cardViewMode: varchar("card_view_mode", { length: 20 }).default('comfortable'), // 'comfortable' or 'compact'
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

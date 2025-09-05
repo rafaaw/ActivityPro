@@ -854,6 +854,7 @@ export class DatabaseStorage implements IStorage {
         .values({
           userId,
           teamNotificationsEnabled: false,
+          cardViewMode: 'comfortable',
         })
         .returning();
       return newSettings;

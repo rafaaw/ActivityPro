@@ -155,6 +155,7 @@ CREATE TABLE user_settings (
     id VARCHAR PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id VARCHAR NOT NULL UNIQUE REFERENCES users(id),
     team_notifications_enabled BOOLEAN DEFAULT false,
+    card_view_mode VARCHAR(20) DEFAULT 'comfortable',
     created_at TIMESTAMP DEFAULT NOW(),
     updated_at TIMESTAMP DEFAULT NOW()
 );

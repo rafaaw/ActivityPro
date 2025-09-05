@@ -329,7 +329,7 @@ export default function ActivityCard({ activity }: ActivityCardProps) {
                   <span data-testid="text-activity-requester">{activity.requester}</span>
                 </>
               )}
-              {activity.observations && (
+              {activity.observations && activity.observations.trim() && (
                 <>
                   <span>•</span>
                   <span data-testid="text-activity-observations" className="italic text-gray-600 dark:text-gray-400">
@@ -339,7 +339,7 @@ export default function ActivityCard({ activity }: ActivityCardProps) {
                   </span>
                 </>
               )}
-              {activity.totalTime && activity.totalTime > 0 && (
+              {!!(activity.totalTime && activity.totalTime > 0) && (
                 <>
                   <span>•</span>
                   <span className="flex items-center" data-testid="text-activity-time">
@@ -359,11 +359,11 @@ export default function ActivityCard({ activity }: ActivityCardProps) {
         </div>
 
         {/* Subtasks - Sempre mostrar para atividades checklist */}
-        {activity.type === 'checklist' && (
+        {activity.type === 'checklist' && activity.subtasks && activity.subtasks.length > 0 && (
           <div className="mb-4">
             <div className="flex items-center justify-between mb-2">
               <p className="text-xs text-muted-foreground dark:text-gray-300">
-                Subtarefas ({activity.subtasks ? activity.subtasks.filter(s => s.completed).length : 0}/{activity.subtasks ? activity.subtasks.length : 0})
+                Subtarefas ({activity.subtasks.filter(s => s.completed).length}/{activity.subtasks.length})
               </p>
               <span className="text-xs font-medium text-primary dark:text-blue-400">
                 {getProgressPercentage()}%
@@ -468,7 +468,7 @@ export default function ActivityCard({ activity }: ActivityCardProps) {
               </Button>
             )}
 
-            {(activity.status === 'completed' || activity.status === 'cancelled') && (
+            {(activity.status === 'completed' || activity.status === 'cancelled' || activity.status === 'next') && (
               <Button
                 size="sm"
                 variant="outline"
@@ -477,7 +477,7 @@ export default function ActivityCard({ activity }: ActivityCardProps) {
                 data-testid="button-view-details"
               >
                 <Eye className="w-3 h-3 mr-1" />
-                Detalhes
+                {activity.status === 'next' ? 'Visualizar' : 'Detalhes'}
               </Button>
             )}
           </div>

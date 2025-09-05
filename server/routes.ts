@@ -2306,13 +2306,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/user/settings', isAuthenticated, async (req, res) => {
     try {
       const userId = req.user!.id;
-      const user = await storage.getUser(userId);
-
-      // Only sector chiefs and admins can access settings
-      if (!user || (user.role !== 'sector_chief' && user.role !== 'admin')) {
-        return res.status(403).json({ message: "Access denied" });
-      }
-
       const settings = await storage.getUserSettings(userId);
       res.json(settings);
     } catch (error) {
@@ -2324,23 +2317,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put('/api/user/settings', isAuthenticated, async (req, res) => {
     try {
       const userId = req.user!.id;
-      const user = await storage.getUser(userId);
+      const { teamNotificationsEnabled, cardViewMode } = req.body;
 
-      // Only sector chiefs and admins can modify settings
-      if (!user || (user.role !== 'sector_chief' && user.role !== 'admin')) {
-        return res.status(403).json({ message: "Access denied" });
+      const updates: any = {};
+      
+      if (typeof teamNotificationsEnabled === 'boolean') {
+        // Only sector chiefs and admins can modify team notifications
+        const user = await storage.getUser(userId);
+        if (user && (user.role === 'sector_chief' || user.role === 'admin')) {
+          updates.teamNotificationsEnabled = teamNotificationsEnabled;
+        }
       }
 
-      const { teamNotificationsEnabled } = req.body;
-
-      if (typeof teamNotificationsEnabled !== 'boolean') {
-        return res.status(400).json({ message: "Invalid settings data" });
+      if (typeof cardViewMode === 'string' && ['comfortable', 'compact'].includes(cardViewMode)) {
+        updates.cardViewMode = cardViewMode;
       }
 
-      const settings = await storage.updateUserSettings(userId, {
-        teamNotificationsEnabled,
-      });
+      if (Object.keys(updates).length === 0) {
+        return res.status(400).json({ message: "No valid settings to update" });
+      }
 
+      const settings = await storage.updateUserSettings(userId, updates);
       res.json(settings);
     } catch (error) {
       console.error("Error updating user settings:", error);

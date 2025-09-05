@@ -97,10 +97,17 @@ export default function CompletedActivityDetails({
           <DialogTitle className="flex items-center gap-2">
             {activity.status === 'completed' ? (
               <CheckSquare className="w-5 h-5 text-green-600" />
-            ) : (
+            ) : activity.status === 'cancelled' ? (
               <X className="w-5 h-5 text-red-600" />
+            ) : (
+              <FileText className="w-5 h-5 text-blue-600" />
             )}
-            {activity.status === 'completed' ? 'Detalhes da Atividade Concluída' : 'Detalhes da Atividade Cancelada'}
+            {activity.status === 'completed' 
+              ? 'Detalhes da Atividade Concluída' 
+              : activity.status === 'cancelled' 
+              ? 'Detalhes da Atividade Cancelada'
+              : 'Detalhes da Atividade'
+            }
           </DialogTitle>
         </DialogHeader>
 
@@ -117,9 +124,25 @@ export default function CompletedActivityDetails({
                   <Badge variant="outline" className="text-green-600 border-green-600">
                     Concluída
                   </Badge>
-                ) : (
+                ) : activity.status === 'cancelled' ? (
                   <Badge variant="outline" className="text-red-600 border-red-600">
                     Cancelada
+                  </Badge>
+                ) : activity.status === 'next' ? (
+                  <Badge variant="outline" className="text-blue-600 border-blue-600">
+                    Próxima
+                  </Badge>
+                ) : activity.status === 'in_progress' ? (
+                  <Badge variant="outline" className="text-green-600 border-green-600">
+                    Em Progresso
+                  </Badge>
+                ) : activity.status === 'paused' ? (
+                  <Badge variant="outline" className="text-orange-600 border-orange-600">
+                    Pausada
+                  </Badge>
+                ) : (
+                  <Badge variant="outline">
+                    {activity.status}
                   </Badge>
                 )}
               </div>
@@ -139,16 +162,11 @@ export default function CompletedActivityDetails({
                 <div className="flex items-center gap-2">
                   <Calendar className="w-4 h-4 text-muted-foreground" />
                   <span>
-                    Data de criação: {formatDateOnly(activity.createdAt)}
-                  </span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Calendar className="w-4 h-4 text-muted-foreground" />
-                  <span>
-                    {activity.status === 'completed' ? 'Concluída' : 'Cancelada'} em: {
-                      activity.status === 'completed'
-                        ? formatDateOnly(activity.completedAt)
-                        : formatDateOnly(activity.cancelledAt)
+                    {activity.status === 'completed' 
+                      ? `Concluída em: ${formatDateOnly(activity.completedAt)}`
+                      : activity.status === 'cancelled' 
+                      ? `Cancelada em: ${formatDateOnly(activity.cancelledAt)}`
+                      : `Criada em: ${formatDateOnly(activity.createdAt)}`
                     }
                   </span>
                 </div>

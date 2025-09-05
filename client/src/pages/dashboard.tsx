@@ -3,15 +3,18 @@ import { useQuery } from "@tanstack/react-query";
 import Layout from "@/components/Layout";
 import ActiveTimer from "@/components/ActiveTimer";
 import ActivityCard from "@/components/ActivityCard";
+import ActivityCardCompact from "@/components/ActivityCardCompact";
 import QuickActions from "@/components/QuickActions";
 import RecentHistory from "@/components/RecentHistory";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useUserSettings } from "@/hooks/useUserSettings";
 import type { ActivityWithDetails, DashboardStats } from "@shared/schema";
 
 export default function Dashboard() {
   const { user } = useAuth();
+  const { settings } = useUserSettings();
 
   const { data: activities = [], isLoading: activitiesLoading } = useQuery<ActivityWithDetails[]>({
     queryKey: ["/api/activities"],
@@ -24,6 +27,10 @@ export default function Dashboard() {
   });
 
   if (!user) return null;
+
+  // Determinar qual componente usar baseado na configuração do usuário
+  const cardViewMode = settings?.cardViewMode || 'comfortable';
+  const ActivityCardComponent = cardViewMode === 'compact' ? ActivityCardCompact : ActivityCard;
 
   // Filter activities to show only the current user's activities
   const userActivities = activities.filter(a => a.collaboratorId === user.id);
@@ -129,7 +136,7 @@ export default function Dashboard() {
                 </p>
               ) : (
                 nextActivities.map(activity => (
-                  <ActivityCard key={activity.id} activity={activity} />
+                  <ActivityCardComponent key={activity.id} activity={activity} />
                 ))
               )}
             </CardContent>
@@ -161,7 +168,7 @@ export default function Dashboard() {
                 </p>
               ) : (
                 pausedActivities.map(activity => (
-                  <ActivityCard key={activity.id} activity={activity} />
+                  <ActivityCardComponent key={activity.id} activity={activity} />
                 ))
               )}
             </CardContent>
@@ -193,7 +200,7 @@ export default function Dashboard() {
                 </p>
               ) : (
                 completedToday.map(activity => (
-                  <ActivityCard key={activity.id} activity={activity} />
+                  <ActivityCardComponent key={activity.id} activity={activity} />
                 ))
               )}
             </CardContent>
