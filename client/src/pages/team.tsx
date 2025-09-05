@@ -208,7 +208,7 @@ function TeamPage() {
       .reduce((acc: any[], activity) => {
         const plantName = activity.plant || activity.plantRef?.name || 'Sem Planta';
         const existing = acc.find(item => item.name === plantName);
-        
+
         if (existing) {
           existing.completed += 1;
           existing.totalTime += activity.totalTime || 0;
@@ -235,7 +235,7 @@ function TeamPage() {
         const projectName = activity.project;
         const existing = acc.find(item => item.name === projectName);
         const timeHours = Math.round((activity.totalTime || 0) / 3600 * 100) / 100;
-        
+
         if (existing) {
           existing.totalTime += timeHours;
           existing.activities += 1;
@@ -274,7 +274,7 @@ function TeamPage() {
       const total = memberActivities.length;
       const totalTime = memberActivities.reduce((sum, a) => sum + (a.totalTime || 0), 0);
       const avgTimePerActivity = total > 0 ? totalTime / total / 3600 : 0;
-      
+
       return {
         name: `${member.firstName} ${member.lastName}`.trim() || member.username,
         completed: completed,
@@ -488,7 +488,7 @@ function TeamPage() {
                               Visualizar
                             </Button>
                           )}
-                          
+
                           <Badge
                             variant={currentActivity ? "default" : "secondary"}
                             className={currentActivity ? "bg-green-500 hover:bg-green-600 hover:scale-105 transition-transform" : ""}
@@ -590,8 +590,8 @@ function TeamPage() {
                     <ResponsiveContainer width="100%" height="100%">
                       <BarChart data={chartData.plantData}>
                         <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis 
-                          dataKey="name" 
+                        <XAxis
+                          dataKey="name"
                           angle={-45}
                           textAnchor="end"
                           height={80}
@@ -629,8 +629,8 @@ function TeamPage() {
                     <ResponsiveContainer width="100%" height="100%">
                       <BarChart data={chartData.projectData}>
                         <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis 
-                          dataKey="name" 
+                        <XAxis
+                          dataKey="name"
                           angle={-45}
                           textAnchor="end"
                           height={80}
@@ -667,8 +667,8 @@ function TeamPage() {
                     <ResponsiveContainer width="100%" height="100%">
                       <BarChart data={chartData.productivityData}>
                         <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis 
-                          dataKey="name" 
+                        <XAxis
+                          dataKey="name"
                           angle={-45}
                           textAnchor="end"
                           height={80}

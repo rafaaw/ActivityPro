@@ -493,7 +493,7 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(subtasks)
       .where(eq(subtasks.id, id));
-    
+
     if (!subtask) {
       throw new Error('Subtask not found');
     }
