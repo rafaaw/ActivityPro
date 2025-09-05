@@ -369,14 +369,14 @@ export class DatabaseStorage implements IStorage {
     return activitiesWithDetails;
   }
 
-  async getActivitiesBySector(sectorId: number): Promise<ActivityWithDetails[]> {
+  async getActivitiesBySector(sectorId: string): Promise<ActivityWithDetails[]> {
     const results = await db
       .select()
       .from(activities)
       .leftJoin(users, eq(activities.collaboratorId, users.id))
       .leftJoin(projects, eq(activities.projectId, projects.id))
       .leftJoin(plants, eq(activities.plantId, plants.id))
-      .where(eq(activities.sectorId, sectorId))
+      .where(eq(users.sectorId, sectorId))
       .orderBy(desc(activities.createdAt));
 
     const activitiesWithDetails = await Promise.all(

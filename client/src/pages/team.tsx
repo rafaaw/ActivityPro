@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import Layout from "@/components/Layout";
+import CompletedActivityDetails from "@/components/CompletedActivityDetails";
 import { useAuth } from "@/hooks/useAuth";
 import {
   Users,
@@ -18,7 +19,8 @@ import {
   Calendar,
   User,
   MapPin,
-  Briefcase
+  Briefcase,
+  Eye
 } from "lucide-react";
 import type { User as UserType, ActivityWithDetails, UserWithSector } from "@shared/schema";
 
@@ -28,6 +30,8 @@ function TeamPage() {
   const queryClient = useQueryClient();
   const [timeFilter, setTimeFilter] = useState("today");
   const [userFilter, setUserFilter] = useState("all");
+  const [showDetailsDialog, setShowDetailsDialog] = useState(false);
+  const [selectedActivity, setSelectedActivity] = useState<ActivityWithDetails | null>(null);
 
   // Verificar se é gerente de setor ou admin
   if (!user || (user.role !== 'sector_chief' && user.role !== 'admin')) {
@@ -156,6 +160,11 @@ function TeamPage() {
     return teamActivities.find((activity) =>
       activity.collaboratorId === memberId && activity.status === 'in_progress'
     );
+  };
+
+  const handleViewDetails = (activity: ActivityWithDetails) => {
+    setSelectedActivity(activity);
+    setShowDetailsDialog(true);
   };
 
   return (
@@ -338,12 +347,26 @@ function TeamPage() {
                           )}
                         </div>
 
-                        <Badge
-                          variant={currentActivity ? "default" : "secondary"}
-                          className={currentActivity ? "bg-green-500 hover:bg-green-600 hover:scale-105 transition-transform" : ""}
-                        >
-                          {currentActivity ? "Ativo" : "Inativo"}
-                        </Badge>
+                        <div className="flex items-center space-x-2">
+                          {currentActivity && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleViewDetails(currentActivity)}
+                              className="text-blue-600 border-blue-600 hover:bg-blue-600 hover:text-blue-50 hover:scale-110 transition-transform"
+                            >
+                              <Eye className="w-3 h-3 mr-1" />
+                              Visualizar
+                            </Button>
+                          )}
+                          
+                          <Badge
+                            variant={currentActivity ? "default" : "secondary"}
+                            className={currentActivity ? "bg-green-500 hover:bg-green-600 hover:scale-105 transition-transform" : ""}
+                          >
+                            {currentActivity ? "Ativo" : "Inativo"}
+                          </Badge>
+                        </div>
                       </div>
                     );
                   })
@@ -437,6 +460,15 @@ function TeamPage() {
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Dialog de Detalhes da Atividade */}
+      {selectedActivity && (
+        <CompletedActivityDetails
+          isOpen={showDetailsDialog}
+          onClose={() => setShowDetailsDialog(false)}
+          activity={selectedActivity}
+        />
+      )}
     </Layout>
   );
 }
