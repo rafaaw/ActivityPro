@@ -488,11 +488,29 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateSubtask(id: string, data: { completed?: boolean }): Promise<Subtask> {
+    // First get the subtask to find its activity
+    const [subtask] = await db
+      .select()
+      .from(subtasks)
+      .where(eq(subtasks.id, id));
+    
+    if (!subtask) {
+      throw new Error('Subtask not found');
+    }
+
+    // Update the subtask
     const [updated] = await db
       .update(subtasks)
       .set(data)
       .where(eq(subtasks.id, id))
       .returning();
+
+    // Update the parent activity's updatedAt timestamp to reflect the change
+    await db
+      .update(activities)
+      .set({ updatedAt: new Date() })
+      .where(eq(activities.id, subtask.activityId));
+
     return updated;
   }
 

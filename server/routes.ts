@@ -1120,7 +1120,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Apply time filter if provided
-      const timeFilter = req.query.timeFilter;
+      const timeFilter = req.query.timeFilter;      
       if (timeFilter && timeFilter !== 'all') {
         const now = new Date();
         let startDate: Date;
@@ -1142,16 +1142,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
             startDate = new Date(0); // No filter
         }
 
+        const beforeCount = activities.length;
         activities = activities.filter((activity: any) => {
-          // Always include in-progress activities regardless of creation date
-          if (activity.status === 'in_progress') {
+          // Always include active/current activities regardless of creation date
+          if (activity.status === 'in_progress' || activity.status === 'paused') {
             return true;
           }
 
-          // For other activities, filter by creation date
+          // For other activities, check multiple dates to see if there was any activity today:
           const activityDate = new Date(activity.createdAt);
-          return activityDate >= startDate;
+          const updatedDate = new Date(activity.updatedAt);
+          
+          // Check if activity was created or updated in the time period
+          if (activityDate >= startDate || updatedDate >= startDate) {
+            return true;
+          }
+          
+          // Check specific timestamps for activities that happened in the period
+          if (activity.completedAt) {
+            const completedDate = new Date(activity.completedAt);
+            if (completedDate >= startDate) return true;
+          }
+          
+          if (activity.pausedAt) {
+            const pausedDate = new Date(activity.pausedAt);
+            if (pausedDate >= startDate) return true;
+          }
+          
+          if (activity.startedAt) {
+            const startedDate = new Date(activity.startedAt);
+            if (startedDate >= startDate) return true;
+          }
+          
+          if (activity.cancelledAt) {
+            const cancelledDate = new Date(activity.cancelledAt);
+            if (cancelledDate >= startDate) return true;
+          }
+          
+          // Check if any subtask was created in the time period (indicates subtask activity)
+          if (activity.subtasks && activity.subtasks.length > 0) {
+            const hasRecentSubtask = activity.subtasks.some((subtask: any) => {
+              const subtaskDate = new Date(subtask.createdAt);
+              return subtaskDate >= startDate;
+            });
+            if (hasRecentSubtask) {
+              return true;
+            }
+          }
+          
+          return false;
         });
+        
+        console.log(`Team activities: ${beforeCount} -> ${activities.length} after ${timeFilter} filter`);
       }
 
       res.json(activities);

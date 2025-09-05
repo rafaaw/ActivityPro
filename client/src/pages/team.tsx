@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import Layout from "@/components/Layout";
 import CompletedActivityDetails from "@/components/CompletedActivityDetails";
 import { useAuth } from "@/hooks/useAuth";
@@ -20,8 +21,28 @@ import {
   User,
   MapPin,
   Briefcase,
-  Eye
+  Eye,
+  RefreshCw,
+  BarChart3,
+  PieChart
 } from "lucide-react";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  ResponsiveContainer,
+  PieChart as RechartsPieChart,
+  Pie,
+  Cell,
+  RadarChart,
+  PolarGrid,
+  PolarAngleAxis,
+  PolarRadiusAxis,
+  Radar,
+  Legend
+} from "recharts";
 import type { User as UserType, ActivityWithDetails, UserWithSector } from "@shared/schema";
 
 function TeamPage() {
@@ -93,8 +114,10 @@ function TeamPage() {
 
   // Force refresh when timeFilter changes
   useEffect(() => {
-    refetchActivities();
-  }, [timeFilter, refetchActivities]);
+    // Invalidate queries when time filter changes to force fresh data
+    queryClient.invalidateQueries({ queryKey: ['/api/team/activities'] });
+    queryClient.invalidateQueries({ queryKey: ['/api/team/stats'] });
+  }, [timeFilter, queryClient]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -167,6 +190,106 @@ function TeamPage() {
     setShowDetailsDialog(true);
   };
 
+  const handleRefresh = () => {
+    // Force refresh all team data with current filters - include timeFilter in all queries
+    queryClient.invalidateQueries({ queryKey: ['/api/team/activities', timeFilter] });
+    queryClient.invalidateQueries({ queryKey: ['/api/team/stats', timeFilter] });
+    queryClient.invalidateQueries({ queryKey: ['/api/team/members'] });
+    // Also invalidate without timeFilter to ensure all variations are refreshed
+    queryClient.invalidateQueries({ queryKey: ['/api/team/activities'] });
+    queryClient.invalidateQueries({ queryKey: ['/api/team/stats'] });
+  };
+
+  // Dados para gráficos
+  const getChartData = () => {
+    // Atividades concluídas por planta
+    const plantData = filteredActivities
+      .filter(a => a.status === 'completed')
+      .reduce((acc: any[], activity) => {
+        const plantName = activity.plant || activity.plantRef?.name || 'Sem Planta';
+        const existing = acc.find(item => item.name === plantName);
+        
+        if (existing) {
+          existing.completed += 1;
+          existing.totalTime += activity.totalTime || 0;
+        } else {
+          acc.push({
+            name: plantName,
+            completed: 1,
+            totalTime: activity.totalTime || 0,
+            avgTime: activity.totalTime || 0
+          });
+        }
+        return acc;
+      }, [])
+      .map(item => ({
+        ...item,
+        avgTime: Math.round((item.totalTime / item.completed) / 3600 * 100) / 100, // Média em horas
+        totalTimeHours: Math.round(item.totalTime / 3600 * 100) / 100
+      }));
+
+    // Tempo gasto por projeto
+    const projectData = filteredActivities
+      .filter(a => a.project && a.project.trim() !== '')
+      .reduce((acc: any[], activity) => {
+        const projectName = activity.project;
+        const existing = acc.find(item => item.name === projectName);
+        const timeHours = Math.round((activity.totalTime || 0) / 3600 * 100) / 100;
+        
+        if (existing) {
+          existing.totalTime += timeHours;
+          existing.activities += 1;
+          existing.completed += activity.status === 'completed' ? 1 : 0;
+        } else {
+          acc.push({
+            name: projectName,
+            totalTime: timeHours,
+            activities: 1,
+            completed: activity.status === 'completed' ? 1 : 0
+          });
+        }
+        return acc;
+      }, [])
+      .sort((a, b) => b.totalTime - a.totalTime)
+      .slice(0, 8); // Top 8 projetos
+
+    // Debug temporário
+    console.log('Atividades filtradas:', filteredActivities.length);
+    console.log('Atividades com projeto:', filteredActivities.filter(a => a.project && a.project.trim() !== '').length);
+    console.log('Project data:', projectData);
+
+    // Status das atividades (melhorado)
+    const statusData = [
+      { name: 'Em Progresso', value: filteredActivities.filter(a => a.status === 'in_progress').length, color: '#3b82f6' },
+      { name: 'Pausadas', value: filteredActivities.filter(a => a.status === 'paused').length, color: '#f59e0b' },
+      { name: 'Concluídas', value: filteredActivities.filter(a => a.status === 'completed').length, color: '#10b981' },
+      { name: 'Canceladas', value: filteredActivities.filter(a => a.status === 'cancelled').length, color: '#ef4444' },
+      { name: 'Próximas', value: filteredActivities.filter(a => a.status === 'next').length, color: '#6b7280' }
+    ].filter(item => item.value > 0);
+
+    // Produtividade por colaborador (melhorado)
+    const productivityData = filteredMembers.map(member => {
+      const memberActivities = filteredActivities.filter(a => a.collaboratorId === member.id);
+      const completed = memberActivities.filter(a => a.status === 'completed').length;
+      const total = memberActivities.length;
+      const totalTime = memberActivities.reduce((sum, a) => sum + (a.totalTime || 0), 0);
+      const avgTimePerActivity = total > 0 ? totalTime / total / 3600 : 0;
+      
+      return {
+        name: `${member.firstName} ${member.lastName}`.trim() || member.username,
+        completed: completed,
+        total: total,
+        efficiency: total > 0 ? Math.round((completed / total) * 100) : 0,
+        totalHours: Math.round(totalTime / 3600 * 100) / 100,
+        avgHours: Math.round(avgTimePerActivity * 100) / 100
+      };
+    }).filter(item => item.total > 0); // Só mostrar colaboradores com atividades
+
+    return { plantData, projectData, statusData, productivityData };
+  };
+
+  const chartData = getChartData();
+
   return (
     <Layout>
       <div className="flex-1 space-y-6 p-6">
@@ -206,6 +329,11 @@ function TeamPage() {
                 <SelectItem value="month">Este mês</SelectItem>
               </SelectContent>
             </Select>
+
+            <Button variant="outline" onClick={handleRefresh} className="flex items-center space-x-2">
+              <RefreshCw className="w-4 h-4" />
+              <span>Atualizar</span>
+            </Button>
 
             <Button variant="outline" className="flex items-center space-x-2">
               <Download className="w-4 h-4" />
@@ -283,6 +411,7 @@ function TeamPage() {
             <TabsTrigger value="status">Status Atual</TabsTrigger>
             <TabsTrigger value="reports">Relatórios</TabsTrigger>
             <TabsTrigger value="activities">Atividades</TabsTrigger>
+            <TabsTrigger value="charts">Gráficos</TabsTrigger>
           </TabsList>
 
           {/* Status Atual da Equipe */}
@@ -392,6 +521,170 @@ function TeamPage() {
                 </div>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          {/* Gráficos */}
+          <TabsContent value="charts" className="space-y-4">
+            <div className="grid gap-4 md:grid-cols-2">
+              {/* Gráfico de Status das Atividades */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <PieChart className="w-5 h-5" />
+                    Status das Atividades
+                  </CardTitle>
+                  <CardDescription>
+                    Distribuição das atividades por status
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <ChartContainer
+                    config={{
+                      value: { label: "Atividades" }
+                    }}
+                    className="h-[300px]"
+                  >
+                    <ResponsiveContainer width="100%" height="100%">
+                      <RechartsPieChart>
+                        <ChartTooltip
+                          content={<ChartTooltipContent />}
+                        />
+                        <Pie
+                          data={chartData.statusData}
+                          cx="50%"
+                          cy="50%"
+                          outerRadius={80}
+                          dataKey="value"
+                          label={({ name, value }: any) => `${name}: ${value}`}
+                        >
+                          {chartData.statusData.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={entry.color} />
+                          ))}
+                        </Pie>
+                        <Legend />
+                      </RechartsPieChart>
+                    </ResponsiveContainer>
+                  </ChartContainer>
+                </CardContent>
+              </Card>
+
+              {/* Atividades Concluídas por Planta */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <BarChart3 className="w-5 h-5" />
+                    Atividades Concluídas por Planta
+                  </CardTitle>
+                  <CardDescription>
+                    Quantidade e tempo médio por planta
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <ChartContainer
+                    config={{
+                      completed: { label: "Concluídas", color: "#10b981" },
+                      avgTime: { label: "Tempo Médio (h)", color: "#3b82f6" }
+                    }}
+                    className="h-[300px]"
+                  >
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={chartData.plantData}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis 
+                          dataKey="name" 
+                          angle={-45}
+                          textAnchor="end"
+                          height={80}
+                          fontSize={12}
+                        />
+                        <YAxis />
+                        <ChartTooltip content={<ChartTooltipContent />} />
+                        <Legend />
+                        <Bar dataKey="completed" fill="#10b981" name="Atividades Concluídas" />
+                        <Bar dataKey="avgTime" fill="#3b82f6" name="Tempo Médio (h)" />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </ChartContainer>
+                </CardContent>
+              </Card>
+
+              {/* Tempo Gasto por Projeto */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Clock className="w-5 h-5" />
+                    Tempo Gasto por Projeto
+                  </CardTitle>
+                  <CardDescription>
+                    Top 8 projetos com mais tempo investido
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <ChartContainer
+                    config={{
+                      totalTime: { label: "Tempo Total (h)", color: "#8b5cf6" }
+                    }}
+                    className="h-[300px]"
+                  >
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={chartData.projectData}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis 
+                          dataKey="name" 
+                          angle={-45}
+                          textAnchor="end"
+                          height={80}
+                          fontSize={10}
+                        />
+                        <YAxis />
+                        <ChartTooltip content={<ChartTooltipContent />} />
+                        <Bar dataKey="totalTime" fill="#8b5cf6" name="Tempo Total (h)" />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </ChartContainer>
+                </CardContent>
+              </Card>
+
+              {/* Produtividade por Colaborador */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <TrendingUp className="w-5 h-5" />
+                    Produtividade por Colaborador
+                  </CardTitle>
+                  <CardDescription>
+                    Atividades concluídas e eficiência
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <ChartContainer
+                    config={{
+                      completed: { label: "Concluídas", color: "#10b981" },
+                      efficiency: { label: "Eficiência %", color: "#f59e0b" }
+                    }}
+                    className="h-[300px]"
+                  >
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={chartData.productivityData}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis 
+                          dataKey="name" 
+                          angle={-45}
+                          textAnchor="end"
+                          height={80}
+                          fontSize={12}
+                        />
+                        <YAxis />
+                        <ChartTooltip content={<ChartTooltipContent />} />
+                        <Legend />
+                        <Bar dataKey="completed" fill="#10b981" name="Atividades Concluídas" />
+                        <Bar dataKey="efficiency" fill="#f59e0b" name="Eficiência %" />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </ChartContainer>
+                </CardContent>
+              </Card>
+            </div>
           </TabsContent>
 
           {/* Atividades */}
