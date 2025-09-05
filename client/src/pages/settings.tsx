@@ -46,10 +46,20 @@ export default function Settings() {
 
   return (
     <Layout>
-      <div className="space-y-6">
-        <h1 className="text-3xl font-bold font-display" data-testid="text-page-title">
-          Configurações
-        </h1>
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h1 className="text-3xl font-bold font-display" data-testid="text-page-title">
+            Configurações
+          </h1>
+          <Button
+            onClick={handleSave}
+            disabled={isUpdating}
+            className="flex items-center gap-2"
+          >
+            <Save className="h-4 w-4" />
+            {isUpdating ? 'Salvando...' : 'Salvar Configurações'}
+          </Button>
+        </div>
 
         <Card>
           <CardHeader>
@@ -58,8 +68,8 @@ export default function Settings() {
               Aparência
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="space-y-4">
+          <CardContent className="space-y-4">
+            <div className="space-y-3">
               <div>
                 <Label className="text-base font-medium">
                   Tema da Interface
@@ -69,7 +79,7 @@ export default function Settings() {
                 </p>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <ThemeCard
                   theme="light"
                   currentTheme={theme}
@@ -92,8 +102,8 @@ export default function Settings() {
               Visualização de Atividades
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="space-y-4">
+          <CardContent className="space-y-4">
+            <div className="space-y-3">
               <div>
                 <Label className="text-base font-medium">
                   Modo de Exibição dos Cards
@@ -106,11 +116,11 @@ export default function Settings() {
               <RadioGroup
                 value={cardViewMode}
                 onValueChange={(value) => setCardViewMode(value as 'comfortable' | 'compact')}
-                className="space-y-4"
+                className="space-y-3"
               >
-                <div className="flex items-start space-x-3 p-4 border rounded-lg hover:bg-muted/50 transition-colors">
+                <div className="flex items-start space-x-3 p-3 border rounded-lg hover:bg-muted/50 transition-colors">
                   <RadioGroupItem value="comfortable" id="comfortable" className="mt-1" />
-                  <div className="flex-1 space-y-2">
+                  <div className="flex-1 space-y-1">
                     <div className="flex items-center gap-2">
                       <Monitor className="h-4 w-4 text-primary" />
                       <Label htmlFor="comfortable" className="font-medium cursor-pointer">
@@ -123,9 +133,9 @@ export default function Settings() {
                   </div>
                 </div>
 
-                <div className="flex items-start space-x-3 p-4 border rounded-lg hover:bg-muted/50 transition-colors">
+                <div className="flex items-start space-x-3 p-3 border rounded-lg hover:bg-muted/50 transition-colors">
                   <RadioGroupItem value="compact" id="compact" className="mt-1" />
-                  <div className="flex-1 space-y-2">
+                  <div className="flex-1 space-y-1">
                     <div className="flex items-center gap-2">
                       <Smartphone className="h-4 w-4 text-primary" />
                       <Label htmlFor="compact" className="font-medium cursor-pointer">
@@ -139,17 +149,6 @@ export default function Settings() {
                 </div>
               </RadioGroup>
             </div>
-
-            <div className="flex items-center pt-4 border-t">
-              <Button
-                onClick={handleSave}
-                disabled={isUpdating}
-                className="flex items-center gap-2"
-              >
-                <Save className="h-4 w-4" />
-                {isUpdating ? 'Salvando...' : 'Salvar Configurações'}
-              </Button>
-            </div>
           </CardContent>
         </Card>
 
@@ -161,7 +160,7 @@ export default function Settings() {
                 Notificações da Equipe
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-6">
+            <CardContent className="space-y-4">
               <div className="flex items-center justify-between">
                 <div className="space-y-1">
                   <Label htmlFor="team-notifications" className="text-base font-medium">
