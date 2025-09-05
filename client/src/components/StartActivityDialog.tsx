@@ -65,12 +65,12 @@ export default function StartActivityDialog({
                     </Alert>
 
                     {/* Nova Atividade */}
-                    <Alert className="border-blue-200 bg-blue-50">
-                        <Play className="w-4 h-4 text-blue-600" />
+                    <Alert className="border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-950/50">
+                        <Play className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                         <AlertDescription>
                             <div className="space-y-1">
-                                <p className="font-medium text-blue-900">Nova Atividade:</p>
-                                <p className="text-sm text-blue-800">{newActivityTitle}</p>
+                                <p className="font-medium text-blue-900 dark:text-blue-100">Nova Atividade:</p>
+                                <p className="text-sm text-blue-800 dark:text-blue-200">{newActivityTitle}</p>
                             </div>
                         </AlertDescription>
                     </Alert>

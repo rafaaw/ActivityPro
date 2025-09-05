@@ -78,7 +78,7 @@ export default function ActivityForm({
       priority: initialData?.priority || "medium",
       plantId: initialData?.plantId || "",
       plant: initialData?.plant || "",
-      project: initialData?.project || "",
+      project: initialData?.project?.name || initialData?.project || "", // Lidar com projeto como objeto ou string
       requester: initialData?.requester || "",
       observations: initialData?.observations || "",
       status: initialData?.status || "next",
@@ -94,6 +94,30 @@ export default function ActivityForm({
 
   const watchedType = form.watch("type");
 
+  // Sincronizar todos os campos quando initialData mudar (importante para edição)
+  useEffect(() => {
+    if (initialData) {
+      form.reset({
+        title: initialData.title || "",
+        type: initialData.type || "simple",
+        priority: initialData.priority || "medium",
+        plantId: initialData.plantId || "",
+        plant: initialData.plant || "",
+        project: initialData.project?.name || initialData.project || "", // Lidar com projeto como objeto ou string
+        requester: initialData.requester || "",
+        observations: initialData.observations || "",
+        status: initialData.status || "next",
+        isRetroactive: initialData.isRetroactive || false,
+        completeAllSubtasks: initialData.completeAllSubtasks || false,
+        retroactiveStartDate: initialData.retroactiveStartDate || "",
+        retroactiveEndDate: initialData.retroactiveEndDate || "",
+        retroactiveHours: initialData.retroactiveHours || 0,
+        retroactiveMinutes: initialData.retroactiveMinutes || 0,
+        subtasks: subtasks,
+      });
+    }
+  }, [initialData, form, subtasks]);
+
   // Sincronizar subtasks quando initialData mudar (importante para edição)
   useEffect(() => {
     if (initialData?.subtasks) {
@@ -107,7 +131,7 @@ export default function ActivityForm({
       setSubtasks([]);
       form.setValue("subtasks", []);
     }
-  }, [initialData, form]); // Trigger quando initialData mudar
+  }, [initialData?.subtasks, form]); // Trigger quando subtasks de initialData mudar
 
   const addSubtask = () => {
     if (newSubtask.trim()) {

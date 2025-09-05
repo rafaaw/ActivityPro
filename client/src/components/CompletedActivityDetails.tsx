@@ -156,6 +156,10 @@ export default function CompletedActivityDetails({
                   <span>Planta: {activity.plant || activity.plantRef?.name || 'N/A'}</span>
                 </div>
                 <div className="flex items-center gap-2">
+                  <FileText className="w-4 h-4 text-muted-foreground" />
+                  <span>Projeto: {activity.project || 'N/A'}</span>
+                </div>
+                <div className="flex items-center gap-2">
                   <Clock className="w-4 h-4 text-muted-foreground" />
                   <span>Tempo gasto: {formatTime(activity.totalTime || 0)}</span>
                 </div>

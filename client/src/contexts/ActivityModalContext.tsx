@@ -138,6 +138,7 @@ export function ActivityModalProvider({ children }: ActivityModalProviderProps) 
             <ActivityForm
               initialData={initialData ? {
                 ...initialData,
+                project: initialData.project?.name || initialData.project || '', // Garantir que o projeto seja mapeado corretamente
                 isRetroactive: initialData.isRetroactive ?? false,
                 subtasks: initialData.subtasks?.map(s => ({
                   title: s.title,

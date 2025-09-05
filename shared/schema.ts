@@ -406,7 +406,7 @@ export type InsertUserSettings = z.infer<typeof insertUserSettingsSchema>;
 // Extended types with relations
 export type ActivityWithDetails = Activity & {
   collaborator: User;
-  project?: Project | null;
+  projectRef?: Project | null; // Relação com a tabela projects (activity.projectId)
   plantRef?: Plant;
   subtasks?: Subtask[];
   sessions?: ActivitySession[];

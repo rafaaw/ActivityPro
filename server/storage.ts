@@ -324,7 +324,7 @@ export class DatabaseStorage implements IStorage {
         return {
           ...result.activities,
           collaborator: result.users!,
-          project: result.projects || null,
+          projectRef: result.projects || null, // Manter relação como projectRef para não sobrescrever o campo project
           plantRef: result.plants || undefined,
           subtasks,
           activeSession,
@@ -358,7 +358,7 @@ export class DatabaseStorage implements IStorage {
         return {
           ...result.activities,
           collaborator: result.users!,
-          project: result.projects || null,
+          projectRef: result.projects || null, // Manter relação como projectRef para não sobrescrever o campo project
           plantRef: result.plants || undefined,
           subtasks,
           activeSession,
@@ -369,14 +369,14 @@ export class DatabaseStorage implements IStorage {
     return activitiesWithDetails;
   }
 
-  async getActivitiesBySector(sectorId: string): Promise<ActivityWithDetails[]> {
+  async getActivitiesBySector(sectorId: number): Promise<ActivityWithDetails[]> {
     const results = await db
       .select()
       .from(activities)
       .leftJoin(users, eq(activities.collaboratorId, users.id))
       .leftJoin(projects, eq(activities.projectId, projects.id))
       .leftJoin(plants, eq(activities.plantId, plants.id))
-      .where(eq(users.sectorId, sectorId))
+      .where(eq(activities.sectorId, sectorId))
       .orderBy(desc(activities.createdAt));
 
     const activitiesWithDetails = await Promise.all(
@@ -392,7 +392,7 @@ export class DatabaseStorage implements IStorage {
         return {
           ...result.activities,
           collaborator: result.users!,
-          project: result.projects || null,
+          projectRef: result.projects || null, // Manter relação como projectRef para não sobrescrever o campo project
           plantRef: result.plants || undefined,
           subtasks,
           activeSession,
