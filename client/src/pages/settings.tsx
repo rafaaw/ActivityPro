@@ -36,11 +36,11 @@ export default function Settings() {
 
   const handleSave = () => {
     const newSettings: Partial<UserSettings> = { cardViewMode };
-    
+
     if (canConfigureNotifications) {
       newSettings.teamNotificationsEnabled = teamNotificationsEnabled;
     }
-    
+
     updateSettings(newSettings);
   };
 
@@ -103,8 +103,8 @@ export default function Settings() {
                 </p>
               </div>
 
-              <RadioGroup 
-                value={cardViewMode} 
+              <RadioGroup
+                value={cardViewMode}
                 onValueChange={(value) => setCardViewMode(value as 'comfortable' | 'compact')}
                 className="space-y-4"
               >

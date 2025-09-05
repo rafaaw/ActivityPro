@@ -102,11 +102,11 @@ export default function CompletedActivityDetails({
             ) : (
               <FileText className="w-5 h-5 text-blue-600" />
             )}
-            {activity.status === 'completed' 
-              ? 'Detalhes da Atividade Concluída' 
-              : activity.status === 'cancelled' 
-              ? 'Detalhes da Atividade Cancelada'
-              : 'Detalhes da Atividade'
+            {activity.status === 'completed'
+              ? 'Detalhes da Atividade Concluída'
+              : activity.status === 'cancelled'
+                ? 'Detalhes da Atividade Cancelada'
+                : 'Detalhes da Atividade'
             }
           </DialogTitle>
         </DialogHeader>
@@ -162,11 +162,11 @@ export default function CompletedActivityDetails({
                 <div className="flex items-center gap-2">
                   <Calendar className="w-4 h-4 text-muted-foreground" />
                   <span>
-                    {activity.status === 'completed' 
+                    {activity.status === 'completed'
                       ? `Concluída em: ${formatDateOnly(activity.completedAt)}`
-                      : activity.status === 'cancelled' 
-                      ? `Cancelada em: ${formatDateOnly(activity.cancelledAt)}`
-                      : `Criada em: ${formatDateOnly(activity.createdAt)}`
+                      : activity.status === 'cancelled'
+                        ? `Cancelada em: ${formatDateOnly(activity.cancelledAt)}`
+                        : `Criada em: ${formatDateOnly(activity.createdAt)}`
                     }
                   </span>
                 </div>

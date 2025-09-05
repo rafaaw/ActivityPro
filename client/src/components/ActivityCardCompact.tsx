@@ -230,15 +230,15 @@ export default function ActivityCardCompact({ activity }: ActivityCardCompactPro
         <div className="flex items-center justify-between gap-3">
           {/* Title and Priority */}
           <div className="flex items-center gap-2 flex-1 min-w-0">
-            <Badge 
-              variant={getPriorityColor(activity.priority)} 
+            <Badge
+              variant={getPriorityColor(activity.priority)}
               className="flex-shrink-0 text-xs"
               data-testid="badge-activity-priority"
             >
               {getPriorityText(activity.priority)}
             </Badge>
-            <h4 
-              className="font-medium text-foreground line-clamp-1 text-sm dark:text-white" 
+            <h4
+              className="font-medium text-foreground line-clamp-1 text-sm dark:text-white"
               data-testid="text-activity-title"
               title={activity.title}
             >

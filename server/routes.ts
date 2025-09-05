@@ -2320,7 +2320,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { teamNotificationsEnabled, cardViewMode } = req.body;
 
       const updates: any = {};
-      
+
       if (typeof teamNotificationsEnabled === 'boolean') {
         // Only sector chiefs and admins can modify team notifications
         const user = await storage.getUser(userId);
